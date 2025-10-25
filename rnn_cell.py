@@ -46,6 +46,23 @@ class LSTMAttentionCell(tf.keras.layers.Layer):
         )
         self.gmm_dense = tf.keras.layers.Dense(self.output_units, name="gmm")
 
+    def build(self, input_shape):
+        feature_size = len(drawing.alphabet)
+        input_shape = tf.TensorShape(input_shape)
+        input_dim = input_shape[-1]
+        if input_dim is None:
+            raise ValueError("LSTMAttentionCell requires a known input dimension during build")
+        input_dim = int(input_dim)
+
+        self.lstm1.build((None, feature_size + input_dim))
+        lstm_concat_dim = input_dim + feature_size + self.lstm_size
+        self.attention_dense.build((None, lstm_concat_dim))
+        self.lstm2.build((None, lstm_concat_dim))
+        self.lstm3.build((None, lstm_concat_dim))
+        self.gmm_dense.build((None, self.lstm_size))
+
+        super().build(input_shape)
+
     @property
     def state_size(self):
         feature_size = len(drawing.alphabet)
