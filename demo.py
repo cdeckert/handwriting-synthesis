@@ -84,10 +84,10 @@ class Hand(object):
         max_tsteps = 40*max([len(i) for i in lines])
         biases = biases if biases is not None else [0.5]*num_samples
 
-        x_prime = np.zeros([num_samples, 1200, 3])
-        x_prime_len = np.zeros([num_samples])
-        chars = np.zeros([num_samples, 120])
-        chars_len = np.zeros([num_samples])
+        x_prime = np.zeros([num_samples, 1200, 3], dtype=np.float32)
+        x_prime_len = np.zeros([num_samples], dtype=np.int32)
+        chars = np.zeros([num_samples, 120], dtype=np.int32)
+        chars_len = np.zeros([num_samples], dtype=np.int32)
 
         if styles is not None:
             for i, (cs, style) in enumerate(zip(lines, styles)):
@@ -109,19 +109,17 @@ class Hand(object):
                 chars[i, :len(encoded)] = encoded
                 chars_len[i] = len(encoded)
 
-        [samples] = self.nn.session.run(
-            [self.nn.sampled_sequence],
-            feed_dict={
-                self.nn.prime: styles is not None,
-                self.nn.x_prime: x_prime,
-                self.nn.x_prime_len: x_prime_len,
-                self.nn.num_samples: num_samples,
-                self.nn.sample_tsteps: max_tsteps,
-                self.nn.c: chars,
-                self.nn.c_len: chars_len,
-                self.nn.bias: biases
-            }
+        samples = self.nn.sample_sequences(
+            c=chars,
+            c_len=chars_len,
+            sample_tsteps=max_tsteps,
+            num_samples=num_samples,
+            prime=styles is not None,
+            x_prime=x_prime if styles is not None else None,
+            x_prime_len=x_prime_len if styles is not None else None,
+            bias=np.asarray(biases, dtype=np.float32),
         )
+        samples = samples.numpy()
         samples = [sample[~np.all(sample == 0.0, axis=1)] for sample in samples]
         return samples
 
