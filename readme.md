@@ -31,6 +31,18 @@ hand.write(
 
 Currently, the `Hand` class must be imported from `demo.py`.  If someone would like to package this project to make it more usable, please [contribute](#contribute).
 
+## Web UI
+
+A lightweight Flask application is included to make it easy to try the pretrained model from the browser.
+
+```bash
+pip install -r requirements.txt
+export FLASK_APP=web_app.py
+flask run
+```
+
+Navigate to `http://127.0.0.1:5000`, enter multiple lines of text, and download the generated SVG.  The produced files are stored in `web_output/`.
+
 A pretrained model is included, but if you'd like to train your own, read <a href='https://github.com/sjvasquez/handwriting-synthesis/tree/master/data/raw'>these instructions</a>.
 
 ## Demonstrations
