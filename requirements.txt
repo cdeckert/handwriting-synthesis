@@ -7,3 +7,4 @@ svgwrite>=1.4.3
 tensorflow>=2.20.0
 tensorflow-probability>=0.25.0
 tf-keras>=2.20.0
+flask>=3.0.0
