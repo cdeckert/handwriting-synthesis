@@ -1,18 +1,15 @@
 from __future__ import print_function
 import os
+from typing import Dict
 
 import numpy as np
-import tensorflow.compat.v1 as tf
+import tensorflow as tf
 
 import drawing
 from data_frame import DataFrame
-from rnn_cell import LSTMAttentionCell
+from rnn_cell import LSTMAttentionCell, LSTMAttentionCellState
 from rnn_ops import rnn_free_run
 from tf_base_model import TFBaseModel
-from tf_utils import time_distributed_dense_layer
-
-
-tf.disable_v2_behavior()
 
 
 class DataReader(object):
@@ -72,6 +69,62 @@ class DataReader(object):
             yield batch
 
 
+class HandwritingNetwork(tf.keras.Model):
+
+    def __init__(self, lstm_size, output_mixture_components, attention_mixture_components):
+        super().__init__()
+        self.lstm_size = lstm_size
+        self.output_mixture_components = output_mixture_components
+        self.attention_mixture_components = attention_mixture_components
+        self.output_units = self.output_mixture_components * 6 + 1
+
+        self.cell = LSTMAttentionCell(
+            lstm_size=self.lstm_size,
+            num_attn_mixture_components=self.attention_mixture_components,
+            num_output_mixture_components=self.output_mixture_components,
+        )
+        self.rnn_layer = tf.keras.layers.RNN(
+            self.cell,
+            return_sequences=True,
+            return_state=True,
+            name='handwriting_rnn'
+        )
+        self.output_dense = tf.keras.layers.TimeDistributed(
+            tf.keras.layers.Dense(self.output_units),
+            name='gmm_output'
+        )
+
+    def call(self, inputs: Dict[str, tf.Tensor], training=False):
+        x = inputs['x']
+        x_len = inputs['x_len']
+        c = inputs['c']
+        c_len = inputs['c_len']
+        bias = inputs['bias']
+
+        attention_values = tf.one_hot(c, len(drawing.alphabet), dtype=tf.float32)
+        mask = tf.sequence_mask(x_len, maxlen=tf.shape(x)[1])
+        initial_state = self.cell.get_initial_state(batch_size=tf.shape(x)[0], dtype=tf.float32)
+
+        self.cell.set_constants(attention_values, c_len, bias)
+        outputs_and_state = self.rnn_layer(
+            x,
+            mask=mask,
+            initial_state=initial_state,
+            training=training,
+        )
+        outputs = outputs_and_state[0]
+        final_state = LSTMAttentionCellState(*outputs_and_state[1:])
+        params = self.output_dense(outputs)
+
+        return {
+            'params': params,
+            'final_state': final_state,
+            'attention_values': attention_values,
+            'attention_lengths': c_len,
+            'bias': bias,
+        }
+
+
 class rnn(TFBaseModel):
 
     def __init__(
@@ -86,6 +139,48 @@ class rnn(TFBaseModel):
         self.output_units = self.output_mixture_components*6 + 1
         self.attention_mixture_components = attention_mixture_components
         super(rnn, self).__init__(**kwargs)
+        self.metrics = {'sequence_loss': 0.0}
+
+    def build_model(self):
+        return HandwritingNetwork(
+            lstm_size=self.lstm_size,
+            output_mixture_components=self.output_mixture_components,
+            attention_mixture_components=self.attention_mixture_components,
+        )
+
+    def _prepare_batch(self, batch):
+        tensors = {
+            'x': tf.convert_to_tensor(batch['x'], dtype=tf.float32),
+            'y': tf.convert_to_tensor(batch['y'], dtype=tf.float32),
+            'x_len': tf.convert_to_tensor(batch['x_len'], dtype=tf.int32),
+            'c': tf.convert_to_tensor(batch['c'], dtype=tf.int32),
+            'c_len': tf.convert_to_tensor(batch['c_len'], dtype=tf.int32),
+        }
+        if 'bias' in batch:
+            tensors['bias'] = tf.convert_to_tensor(batch['bias'], dtype=tf.float32)
+        else:
+            tensors['bias'] = tf.zeros(tf.shape(tensors['x_len']), dtype=tf.float32)
+        return tensors
+
+    def calculate_loss(self, batch, training=True):
+        tensors = self._prepare_batch(batch)
+        network_outputs = self.model(
+            {
+                'x': tensors['x'],
+                'x_len': tensors['x_len'],
+                'c': tensors['c'],
+                'c_len': tensors['c_len'],
+                'bias': tensors['bias'],
+            },
+            training=training,
+        )
+        params = network_outputs['params']
+        pis, mus, sigmas, rhos, es = self.parse_parameters(params)
+        sequence_loss, element_loss = self.NLL(
+            tensors['y'], tensors['x_len'], pis, mus, sigmas, rhos, es
+        )
+        metrics = {'sequence_loss': tf.reduce_mean(sequence_loss)}
+        return element_loss, metrics
 
     def parse_parameters(self, z, eps=1e-8, sigma_eps=1e-4):
         pis, sigmas, rhos, mus, es = tf.split(
@@ -122,10 +217,10 @@ class rnn(TFBaseModel):
 
         bernoulli_likelihood = tf.squeeze(tf.where(tf.equal(tf.ones_like(y_3), y_3), es, 1 - es))
 
-        nll = -(tf.log(gmm_likelihood) + tf.log(bernoulli_likelihood))
+        nll = -(tf.math.log(gmm_likelihood) + tf.math.log(bernoulli_likelihood))
         sequence_mask = tf.logical_and(
             tf.sequence_mask(lengths, maxlen=tf.shape(y)[1]),
-            tf.logical_not(tf.is_nan(nll)),
+            tf.logical_not(tf.math.is_nan(nll)),
         )
         nll = tf.where(sequence_mask, nll, tf.zeros_like(nll))
         num_valid = tf.reduce_sum(tf.cast(sequence_mask, tf.float32), axis=1)
@@ -134,79 +229,58 @@ class rnn(TFBaseModel):
         element_loss = tf.reduce_sum(nll) / tf.maximum(tf.reduce_sum(num_valid), 1.0)
         return sequence_loss, element_loss
 
-    def sample(self, cell):
-        initial_state = cell.zero_state(self.num_samples, dtype=tf.float32)
-        initial_input = tf.concat([
-            tf.zeros([self.num_samples, 2]),
-            tf.ones([self.num_samples, 1]),
-        ], axis=1)
-        return rnn_free_run(
+    def sample_sequences(
+        self,
+        c,
+        c_len,
+        sample_tsteps,
+        num_samples,
+        prime=False,
+        x_prime=None,
+        x_prime_len=None,
+        bias=None,
+    ):
+        tensors = {
+            'c': tf.convert_to_tensor(c, dtype=tf.int32),
+            'c_len': tf.convert_to_tensor(c_len, dtype=tf.int32),
+        }
+        if bias is None:
+            tensors['bias'] = tf.zeros([num_samples], dtype=tf.float32)
+        else:
+            tensors['bias'] = tf.convert_to_tensor(bias, dtype=tf.float32)
+
+        attention_values = tf.one_hot(tensors['c'], len(drawing.alphabet), dtype=tf.float32)
+        cell = self.model.cell
+        cell.set_constants(attention_values, tensors['c_len'], tensors['bias'])
+
+        initial_state = cell.get_initial_state(batch_size=num_samples, dtype=tf.float32)
+
+        if prime and x_prime is not None and x_prime_len is not None:
+            x_prime = tf.convert_to_tensor(x_prime, dtype=tf.float32)
+            x_prime_len = tf.convert_to_tensor(x_prime_len, dtype=tf.int32)
+            mask = tf.sequence_mask(x_prime_len, maxlen=tf.shape(x_prime)[1])
+            outputs_and_state = self.model.rnn_layer(
+                x_prime,
+                mask=mask,
+                initial_state=initial_state,
+                training=False,
+            )
+            state = LSTMAttentionCellState(*outputs_and_state[1:])
+            initial_input = cell.output_function(state)
+        else:
+            state = initial_state
+            initial_input = tf.concat([
+                tf.zeros([num_samples, 2]),
+                tf.ones([num_samples, 1]),
+            ], axis=1)
+
+        samples, _ = rnn_free_run(
             cell=cell,
-            sequence_length=self.sample_tsteps,
-            initial_state=initial_state,
+            initial_state=state,
+            sequence_length=sample_tsteps,
             initial_input=initial_input,
-            scope='rnn'
-        )[1]
-
-    def primed_sample(self, cell):
-        initial_state = cell.zero_state(self.num_samples, dtype=tf.float32)
-        primed_state = tf.nn.dynamic_rnn(
-            inputs=self.x_prime,
-            cell=cell,
-            sequence_length=self.x_prime_len,
-            dtype=tf.float32,
-            initial_state=initial_state,
-            scope='rnn'
-        )[1]
-        return rnn_free_run(
-            cell=cell,
-            sequence_length=self.sample_tsteps,
-            initial_state=primed_state,
-            scope='rnn'
-        )[1]
-
-    def calculate_loss(self):
-        self.x = tf.placeholder(tf.float32, [None, None, 3])
-        self.y = tf.placeholder(tf.float32, [None, None, 3])
-        self.x_len = tf.placeholder(tf.int32, [None])
-        self.c = tf.placeholder(tf.int32, [None, None])
-        self.c_len = tf.placeholder(tf.int32, [None])
-
-        self.sample_tsteps = tf.placeholder(tf.int32, [])
-        self.num_samples = tf.placeholder(tf.int32, [])
-        self.prime = tf.placeholder(tf.bool, [])
-        self.x_prime = tf.placeholder(tf.float32, [None, None, 3])
-        self.x_prime_len = tf.placeholder(tf.int32, [None])
-        self.bias = tf.placeholder_with_default(
-            tf.zeros([self.num_samples], dtype=tf.float32), [None])
-
-        cell = LSTMAttentionCell(
-            lstm_size=self.lstm_size,
-            num_attn_mixture_components=self.attention_mixture_components,
-            attention_values=tf.one_hot(self.c, len(drawing.alphabet)),
-            attention_values_lengths=self.c_len,
-            num_output_mixture_components=self.output_mixture_components,
-            bias=self.bias
         )
-        self.initial_state = cell.zero_state(tf.shape(self.x)[0], dtype=tf.float32)
-        outputs, self.final_state = tf.nn.dynamic_rnn(
-            inputs=self.x,
-            cell=cell,
-            sequence_length=self.x_len,
-            dtype=tf.float32,
-            initial_state=self.initial_state,
-            scope='rnn'
-        )
-        params = time_distributed_dense_layer(outputs, self.output_units, scope='rnn/gmm')
-        pis, mus, sigmas, rhos, es = self.parse_parameters(params)
-        sequence_loss, self.loss = self.NLL(self.y, self.x_len, pis, mus, sigmas, rhos, es)
-
-        self.sampled_sequence = tf.cond(
-            self.prime,
-            lambda: self.primed_sample(cell),
-            lambda: self.sample(cell)
-        )
-        return self.loss
+        return samples
 
 
 if __name__ == '__main__':
