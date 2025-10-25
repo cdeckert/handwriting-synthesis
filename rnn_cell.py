@@ -17,7 +17,7 @@ LSTMAttentionCellState = namedtuple(
 tfd = tfp.distributions
 
 
-class LSTMAttentionCell(tf.keras.layers.AbstractRNNCell):
+class LSTMAttentionCell(tf.keras.layers.Layer):
     """Custom RNN cell implementing the attention mechanism from Graves (2013)."""
 
     def __init__(
