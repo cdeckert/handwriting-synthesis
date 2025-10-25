@@ -6,14 +6,26 @@ import argparse
 import os
 import tempfile
 from functools import lru_cache
-from typing import Iterable, List
+from pathlib import Path
+from typing import Iterable, List, Tuple
 
-from flask import Flask, Response, jsonify, render_template_string, request
+from flask import (
+    Flask,
+    Response,
+    abort,
+    jsonify,
+    render_template_string,
+    request,
+    send_from_directory,
+)
 
 from demo import Hand
 
 
 app = Flask(__name__)
+
+DIST_DIR = Path(__file__).resolve().parent / "web_app" / "dist"
+DIST_INDEX_FILE = DIST_DIR / "index.html"
 
 TEMPLATE = """<!doctype html>
 <html lang=\"en\">
@@ -166,6 +178,40 @@ def _available_styles() -> List[int]:
     return sorted(set(style_ids))
 
 
+def _prepare_generation_inputs(
+    text_raw: str,
+    style_raw,
+    alignment_raw: str,
+) -> Tuple[List[str], int | None, str]:
+    """Validate and normalize inputs for preview/download requests."""
+
+    if not isinstance(text_raw, str):
+        raise ValueError("Please enter some text.")
+
+    if not text_raw.strip():
+        raise ValueError("Please enter some text.")
+
+    lines = [line.rstrip() for line in text_raw.splitlines()]
+
+    styles = _available_styles()
+    default_style = styles[0] if styles else None
+
+    try:
+        style = int(style_raw) if style_raw is not None else default_style
+    except (TypeError, ValueError):
+        raise ValueError("Invalid style selected.") from None
+
+    if style is not None and style not in styles:
+        raise ValueError("Selected style is not available.")
+
+    valid_alignments = {"left", "center"}
+    alignment = alignment_raw if alignment_raw in valid_alignments else None
+    if alignment is None:
+        raise ValueError("Invalid alignment selected.")
+
+    return lines, style, alignment
+
+
 def _generate_svg(
     lines: Iterable[str], *, style: int | None = None, alignment: str = "center"
 ) -> bytes:
@@ -200,6 +246,19 @@ def index():
     default_style = styles[0] if styles else None
     valid_alignments = {"left", "center"}
     default_alignment = "center"
+
+    if request.method == "GET":
+        if DIST_INDEX_FILE.exists():
+            return send_from_directory(DIST_DIR, "index.html")
+
+        return render_template_string(
+            TEMPLATE,
+            error=None,
+            text="",
+            styles=styles,
+            selected_style=default_style,
+            selected_alignment=default_alignment,
+        )
 
     if request.method == "POST":
         text = request.form.get("text", "")
@@ -265,14 +324,7 @@ def index():
         headers = {"Content-Disposition": "attachment; filename=handwriting.svg"}
         return Response(svg_bytes, mimetype="image/svg+xml", headers=headers)
 
-    return render_template_string(
-        TEMPLATE,
-        error=None,
-        text="",
-        styles=styles,
-        selected_style=default_style,
-        selected_alignment=default_alignment,
-    )
+    abort(405)
 
 
 @app.route("/preview", methods=["POST"])
@@ -285,30 +337,105 @@ def preview() -> Response:
     alignment_raw = payload.get("alignment", "center")
 
     if not isinstance(text, str) or not text.strip():
-        return jsonify({"svg": "<p class=\"help\">Enter text to see the preview.</p>"})
-
-    styles = _available_styles()
-    default_style = styles[0] if styles else None
-    valid_alignments = {"left", "center"}
+        return jsonify({"svg": "<p class=\"help\">Enter text to see the preview.</p>", "error": "Please enter some text."})
 
     try:
-        style = int(style_raw) if style_raw is not None else default_style
-    except (TypeError, ValueError):
-        style = default_style
-
-    if style is not None and style not in styles:
-        style = default_style
-
-    alignment = alignment_raw if alignment_raw in valid_alignments else "center"
-
-    lines = [line.rstrip() for line in text.splitlines()]
+        lines, style, alignment = _prepare_generation_inputs(text, style_raw, alignment_raw)
+    except ValueError as exc:
+        return jsonify({"svg": f"<p class=\"error\">{exc}</p>", "error": str(exc)}), 400
 
     try:
         svg_bytes = _generate_svg(lines, style=style, alignment=alignment)
     except ValueError as exc:
-        return jsonify({"svg": f"<p class=\"error\">{exc}</p>"}), 400
+        return jsonify({"svg": f"<p class=\"error\">{exc}</p>", "error": str(exc)}), 400
 
     return jsonify({"svg": svg_bytes.decode("utf-8")})
+
+
+@app.route("/api/styles", methods=["GET"])
+def api_styles() -> Response:
+    """Return the list of available handwriting styles."""
+
+    styles = _available_styles()
+    payload = {"styles": [{"id": style_id, "label": f"Style {style_id}"} for style_id in styles]}
+    return jsonify(payload)
+
+
+def _parse_generation_payload(require_text: bool = True) -> Tuple[List[str], int | None, str]:
+    payload = request.get_json(silent=True) or {}
+    text = payload.get("text", "")
+    style_raw = payload.get("style")
+    alignment_raw = payload.get("alignment", "center")
+
+    if not isinstance(text, str):
+        raise ValueError("Please enter some text.")
+
+    if require_text and not text.strip():
+        raise ValueError("Please enter some text.")
+
+    return _prepare_generation_inputs(text, style_raw, alignment_raw)
+
+
+@app.route("/api/preview", methods=["POST"])
+def api_preview() -> Response:
+    """Generate an inline SVG preview for the React UI."""
+
+    try:
+        lines, style, alignment = _parse_generation_payload()
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    try:
+        svg_bytes = _generate_svg(lines, style=style, alignment=alignment)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return jsonify({"svg": svg_bytes.decode("utf-8")})
+
+
+@app.route("/api/generate", methods=["POST"])
+def api_generate() -> Response:
+    """Generate and return an SVG file for download."""
+
+    try:
+        lines, style, alignment = _parse_generation_payload()
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    try:
+        svg_bytes = _generate_svg(lines, style=style, alignment=alignment)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    headers = {"Content-Disposition": "attachment; filename=handwriting.svg"}
+    return Response(svg_bytes, mimetype="image/svg+xml", headers=headers)
+
+
+@app.route("/assets/<path:filename>")
+def spa_assets(filename: str):
+    """Serve compiled frontend asset files if they exist."""
+
+    if not DIST_INDEX_FILE.exists():
+        abort(404)
+
+    assets_dir = DIST_DIR / "assets"
+    return send_from_directory(assets_dir, filename)
+
+
+@app.route("/<path:filename>")
+def spa_catch_all(filename: str):
+    """Serve the compiled SPA or fall back to legacy behaviour."""
+
+    if filename.startswith("api/"):
+        abort(404)
+
+    if DIST_INDEX_FILE.exists():
+        file_path = DIST_DIR / filename
+        if file_path.is_file():
+            return send_from_directory(DIST_DIR, filename)
+        return send_from_directory(DIST_DIR, "index.html")
+
+    abort(404)
 
 
 def _parse_args(argv: List[str] | None = None) -> argparse.Namespace:
