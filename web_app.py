@@ -318,9 +318,9 @@ def _parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--host", default="0.0.0.0", help="Interface to bind the development server to.")
     parser.add_argument(
         "--port",
-        default=int(os.environ.get("PORT", 5000)),
+        default=int(os.environ.get("PORT", 3000)),
         type=int,
-        help="Port to listen on (defaults to 5000 or the PORT environment variable).",
+        help="Port to listen on (defaults to 3000 or the PORT environment variable).",
     )
     parser.add_argument(
         "--debug",
