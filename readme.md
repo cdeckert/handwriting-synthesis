@@ -31,6 +31,21 @@ hand.write(
 
 Currently, the `Hand` class must be imported from `demo.py`.  If someone would like to package this project to make it more usable, please [contribute](#contribute).
 
+### Web UI
+
+A lightweight Flask UI is available to generate SVG files directly from a browser. Install the dependencies and launch the
+development server:
+
+```
+pip install -r requirements.txt
+python web_app.py
+```
+
+Open <http://localhost:5000> and enter the text (multi-line is supported) you would like to render. Submitting the form downloads the generated SVG file.
+
+Use `python web_app.py --help` to see options for changing the host/port or enabling debug mode when you need Flask's auto
+reloader.
+
 A pretrained model is included, but if you'd like to train your own, read <a href='https://github.com/sjvasquez/handwriting-synthesis/tree/master/data/raw'>these instructions</a>.
 
 ## Demonstrations
