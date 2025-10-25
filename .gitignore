@@ -5,3 +5,5 @@ data/processed
 
 logs
 predictions
+
+web_output/
