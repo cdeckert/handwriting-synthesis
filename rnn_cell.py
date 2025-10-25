@@ -34,6 +34,8 @@ class LSTMAttentionCell(tf.keras.layers.Layer):
         self.num_output_mixture_components = num_output_mixture_components
         self.output_units = 6 * self.num_output_mixture_components + 1
         self.bias = bias
+        self._attention_values = None
+        self._attention_lengths = None
 
         self.lstm1 = tf.keras.layers.LSTMCell(self.lstm_size)
         self.lstm2 = tf.keras.layers.LSTMCell(self.lstm_size)
@@ -90,13 +92,25 @@ class LSTMAttentionCell(tf.keras.layers.Layer):
             zeros(1),
         )
 
-    def call(self, inputs, states: Sequence[tf.Tensor], constants=None, **kwargs):
-        del kwargs
-        if constants is None or len(constants) < 3:
-            raise ValueError("LSTMAttentionCell requires attention constants")
-        attention_values, attention_lengths, bias = constants
+    def set_constants(self, attention_values, attention_lengths, bias):
+        self._attention_values = attention_values
+        self._attention_lengths = attention_lengths
         if bias is not None:
             self.bias = bias
+
+    def call(self, inputs, states: Sequence[tf.Tensor], constants=None, **kwargs):
+        del kwargs
+        if constants is not None:
+            if len(constants) < 3:
+                raise ValueError("LSTMAttentionCell requires attention constants")
+            attention_values, attention_lengths, bias = constants
+            self.set_constants(attention_values, attention_lengths, bias)
+
+        if self._attention_values is None or self._attention_lengths is None:
+            raise ValueError("Attention constants must be set before calling the cell")
+
+        attention_values = self._attention_values
+        attention_lengths = self._attention_lengths
 
         batch_size = tf.shape(inputs)[0]
         char_len = tf.shape(attention_values)[1]
@@ -179,7 +193,11 @@ class LSTMAttentionCell(tf.keras.layers.Layer):
         coords = tf.gather_nd(sampled_coords, idx)
         return tf.concat([coords, tf.cast(sampled_e, tf.float32)], axis=1)
 
-    def termination_condition(self, state: LSTMAttentionCellState, attention_lengths):
+    def termination_condition(self, state: LSTMAttentionCellState, attention_lengths=None):
+        if attention_lengths is None:
+            if self._attention_lengths is None:
+                raise ValueError("Attention lengths must be set before calling termination_condition")
+            attention_lengths = self._attention_lengths
         char_idx = tf.cast(tf.argmax(state.phi, axis=1), tf.int32)
         final_char = char_idx >= attention_lengths - 1
         past_final_char = char_idx >= attention_lengths

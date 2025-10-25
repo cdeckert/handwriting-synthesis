@@ -105,11 +105,11 @@ class HandwritingNetwork(tf.keras.Model):
         mask = tf.sequence_mask(x_len, maxlen=tf.shape(x)[1])
         initial_state = self.cell.get_initial_state(batch_size=tf.shape(x)[0], dtype=tf.float32)
 
+        self.cell.set_constants(attention_values, c_len, bias)
         outputs_and_state = self.rnn_layer(
             x,
             mask=mask,
             initial_state=initial_state,
-            constants=[attention_values, c_len, bias],
             training=training,
         )
         outputs = outputs_and_state[0]
@@ -250,10 +250,8 @@ class rnn(TFBaseModel):
             tensors['bias'] = tf.convert_to_tensor(bias, dtype=tf.float32)
 
         attention_values = tf.one_hot(tensors['c'], len(drawing.alphabet), dtype=tf.float32)
-        constants = [attention_values, tensors['c_len'], tensors['bias']]
-
         cell = self.model.cell
-        cell.bias = tensors['bias']
+        cell.set_constants(attention_values, tensors['c_len'], tensors['bias'])
 
         initial_state = cell.get_initial_state(batch_size=num_samples, dtype=tf.float32)
 
@@ -265,7 +263,6 @@ class rnn(TFBaseModel):
                 x_prime,
                 mask=mask,
                 initial_state=initial_state,
-                constants=constants,
                 training=False,
             )
             state = LSTMAttentionCellState(*outputs_and_state[1:])
@@ -282,7 +279,6 @@ class rnn(TFBaseModel):
             initial_state=state,
             sequence_length=sample_tsteps,
             initial_input=initial_input,
-            constants=constants,
         )
         return samples
 

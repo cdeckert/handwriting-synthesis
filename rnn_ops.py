@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-def rnn_free_run(cell, initial_state, sequence_length, initial_input, constants):
+def rnn_free_run(cell, initial_state, sequence_length, initial_input):
     """Autoregressively samples from ``cell`` for ``sequence_length`` steps."""
 
     sequence_length = tf.cast(sequence_length, tf.int32)
@@ -11,10 +11,10 @@ def rnn_free_run(cell, initial_state, sequence_length, initial_input, constants)
     finished = tf.zeros([tf.shape(initial_input)[0]], dtype=tf.bool)
 
     for t in tf.range(sequence_length):
-        output, state = cell(current_input, state, constants=constants)
+        output, state = cell(current_input, state)
         outputs = outputs.write(t, output)
         next_input = cell.output_function(state)
-        termination = cell.termination_condition(state, constants[1])
+        termination = cell.termination_condition(state)
         finished = tf.logical_or(finished, termination)
         current_input = tf.where(finished[:, None], tf.zeros_like(next_input), next_input)
 

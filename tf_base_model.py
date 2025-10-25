@@ -77,7 +77,14 @@ class TFBaseModel:
 
         os.makedirs(self.checkpoint_dir, exist_ok=True)
         self.model = self.build_model()
-        self.global_step = tf.Variable(0, trainable=False, dtype=tf.int64)
+        # The original checkpoints for the handwriting model stored the
+        # ``global_step`` variable as ``int32`` tensors.  The TF2 port
+        # switched this to ``int64``, which prevents older checkpoints from
+        # being restored because TensorFlow enforces an exact dtype match
+        # when assigning checkpoint values.  Keeping the variable ``int32``
+        # maintains compatibility with the existing checkpoint files while
+        # still providing sufficient range for the step counter.
+        self.global_step = tf.Variable(0, trainable=False, dtype=tf.int32)
         self.optimizer = self.get_optimizer(self.learning_rate, self.beta1_decay)
 
         self.checkpoint = tf.train.Checkpoint(
