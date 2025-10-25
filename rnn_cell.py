@@ -3,7 +3,6 @@ from typing import Optional, Sequence
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_probability as tfp
 
 import drawing
 
@@ -12,11 +11,6 @@ LSTMAttentionCellState = namedtuple(
     "LSTMAttentionCellState",
     ["h1", "c1", "h2", "c2", "h3", "c3", "alpha", "beta", "kappa", "w", "phi"],
 )
-
-
-tfd = tfp.distributions
-
-
 class LSTMAttentionCell(tf.keras.layers.Layer):
     """Custom RNN cell implementing the attention mechanism from Graves (2013)."""
 
@@ -182,35 +176,69 @@ class LSTMAttentionCell(tf.keras.layers.Layer):
     def output_function(self, state: LSTMAttentionCellState):
         params = self.gmm_dense(state.h3)
         pis, mus, sigmas, rhos, es = self._parse_parameters(params)
-        mu1, mu2 = tf.split(mus, 2, axis=1)
-        mus = tf.stack([mu1, mu2], axis=2)
-        sigma1, sigma2 = tf.split(sigmas, 2, axis=1)
 
-        covar_matrix = [
-            tf.square(sigma1),
-            rhos * sigma1 * sigma2,
-            rhos * sigma1 * sigma2,
-            tf.square(sigma2),
-        ]
-        covar_matrix = tf.stack(covar_matrix, axis=2)
-        covar_matrix = tf.reshape(
-            covar_matrix,
-            (tf.shape(sigma1)[0], self.num_output_mixture_components, 2, 2),
+        pis_sum = tf.reduce_sum(pis, axis=1, keepdims=True)
+        pis_normalized = tf.math.divide_no_nan(pis, pis_sum)
+        default_probs = tf.fill(
+            [tf.shape(pis)[0], self.num_output_mixture_components],
+            1.0 / tf.cast(self.num_output_mixture_components, tf.float32),
+        )
+        pis = tf.where(pis_sum > 0.0, pis_normalized, default_probs)
+
+        batch_size = tf.shape(pis)[0]
+        mus = tf.reshape(
+            mus,
+            (batch_size, self.num_output_mixture_components, 2),
+        )
+        sigma_params = tf.reshape(
+            sigmas,
+            (batch_size, self.num_output_mixture_components, 2),
         )
 
-        mvn = tfd.MultivariateNormalFullCovariance(loc=mus, covariance_matrix=covar_matrix)
-        bern = tfd.Bernoulli(probs=es)
-        cat = tfd.Categorical(probs=pis)
+        component_idx = tf.squeeze(
+            tf.random.categorical(
+                tf.math.log(pis + 1e-8), num_samples=1, dtype=tf.int32
+            ),
+            axis=1,
+        )
 
-        sampled_e = bern.sample()
-        sampled_coords = mvn.sample()
-        sampled_idx = cat.sample()
+        def gather(param):
+            return tf.gather(param, component_idx, batch_dims=1)
 
-        idx = tf.stack([tf.range(tf.shape(sampled_idx)[0]), sampled_idx], axis=1)
-        coords = tf.gather_nd(sampled_coords, idx)
-        return tf.concat([coords, tf.cast(sampled_e, tf.float32)], axis=1)
+        mu_selected = gather(mus)
+        sigma_selected = gather(sigma_params)
+        rho_selected = gather(rhos)
 
-    def termination_condition(self, state: LSTMAttentionCellState, attention_lengths=None):
+        mu1_selected = mu_selected[:, 0]
+        mu2_selected = mu_selected[:, 1]
+        sigma1_selected = sigma_selected[:, 0]
+        sigma2_selected = sigma_selected[:, 1]
+
+        z1 = tf.random.normal(tf.shape(mu1_selected), dtype=tf.float32)
+        z2 = tf.random.normal(tf.shape(mu1_selected), dtype=tf.float32)
+
+        x = mu1_selected + sigma1_selected * z1
+        y = mu2_selected + sigma2_selected * (
+            rho_selected * z1
+            + tf.sqrt(tf.maximum(1.0 - tf.square(rho_selected), 1e-8)) * z2
+        )
+
+        eos_prob = tf.squeeze(es, axis=1)
+        sampled_e = tf.cast(
+            tf.random.uniform(tf.shape(eos_prob), dtype=tf.float32) < eos_prob,
+            tf.float32,
+        )
+
+        coords = tf.stack([x, y], axis=1)
+        sampled = tf.concat([coords, sampled_e[:, None]], axis=1)
+        return sampled
+
+    def termination_condition(
+        self,
+        state: LSTMAttentionCellState,
+        attention_lengths=None,
+        output=None,
+    ):
         if attention_lengths is None:
             if self._attention_lengths is None:
                 raise ValueError("Attention lengths must be set before calling termination_condition")
@@ -218,7 +246,8 @@ class LSTMAttentionCell(tf.keras.layers.Layer):
         char_idx = tf.cast(tf.argmax(state.phi, axis=1), tf.int32)
         final_char = char_idx >= attention_lengths - 1
         past_final_char = char_idx >= attention_lengths
-        output = self.output_function(state)
+        if output is None:
+            output = self.output_function(state)
         es = tf.cast(output[:, 2], tf.int32)
         is_eos = tf.equal(es, tf.ones_like(es))
         return tf.logical_or(tf.logical_and(final_char, is_eos), past_final_char)

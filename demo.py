@@ -9,6 +9,17 @@ import lyrics
 from rnn import rnn
 
 
+MAX_DEMO_LINES = int(os.environ.get("HANDWRITING_DEMO_MAX_LINES", "1"))
+STEP_MULTIPLIER = int(os.environ.get("HANDWRITING_DEMO_STEP_MULTIPLIER", "3"))
+RUN_FULL_DEMO = os.environ.get("HANDWRITING_DEMO_FULL", "0") == "1"
+
+
+def _trim_lines(lines):
+    if MAX_DEMO_LINES <= 0:
+        return lines
+    return lines[:MAX_DEMO_LINES]
+
+
 class Hand(object):
 
     def __init__(self):
@@ -81,7 +92,8 @@ class Hand(object):
 
     def _sample(self, lines, biases=None, styles=None):
         num_samples = len(lines)
-        max_tsteps = 40*max([len(i) for i in lines])
+        max_tsteps = int(STEP_MULTIPLIER * max(len(i) for i in lines))
+        max_tsteps = max(max_tsteps, 1)
         biases = biases if biases is not None else [0.5]*num_samples
 
         x_prime = np.zeros([num_samples, 1200, 3], dtype=np.float32)
@@ -181,16 +193,16 @@ if __name__ == '__main__':
     hand = Hand()
 
     # usage demo
-    lines = [
+    lines = _trim_lines([
         "Now this is a story all about how",
         "My life got flipped turned upside down",
         "And I'd like to take a minute, just sit right there",
         "I'll tell you how I became the prince of a town called Bel-Air",
-    ]
-    biases = [.75 for i in lines]
-    styles = [9 for i in lines]
-    stroke_colors = ['red', 'green', 'black', 'blue']
-    stroke_widths = [1, 2, 1, 2]
+    ])
+    biases = [.75 for _ in lines]
+    styles = [9 for _ in lines]
+    stroke_colors = ['red', 'green', 'black', 'blue'][:len(lines)]
+    stroke_widths = [1, 2, 1, 2][:len(lines)]
 
     hand.write(
         filename='img/usage_demo.svg',
@@ -202,37 +214,38 @@ if __name__ == '__main__':
     )
 
     # demo number 1 - fixed bias, fixed style
-    lines = lyrics.all_star.split("\n")
+    lines = _trim_lines(lyrics.all_star.split("\n"))
     biases = [.75 for i in lines]
     styles = [12 for i in lines]
 
-    hand.write(
-        filename='img/all_star.svg',
-        lines=lines,
-        biases=biases,
-        styles=styles,
-    )
+    if RUN_FULL_DEMO:
+        hand.write(
+            filename='img/all_star.svg',
+            lines=lines,
+            biases=biases,
+            styles=styles,
+        )
 
-    # demo number 2 - fixed bias, varying style
-    lines = lyrics.downtown.split("\n")
-    biases = [.75 for i in lines]
-    styles = np.cumsum(np.array([len(i) for i in lines]) == 0).astype(int)
+        # demo number 2 - fixed bias, varying style
+        lines = _trim_lines(lyrics.downtown.split("\n"))
+        biases = [.75 for i in lines]
+        styles = np.cumsum(np.array([len(i) for i in lines]) == 0).astype(int)
 
-    hand.write(
-        filename='img/downtown.svg',
-        lines=lines,
-        biases=biases,
-        styles=styles,
-    )
+        hand.write(
+            filename='img/downtown.svg',
+            lines=lines,
+            biases=biases,
+            styles=styles,
+        )
 
-    # demo number 3 - varying bias, fixed style
-    lines = lyrics.give_up.split("\n")
-    biases = .2*np.flip(np.cumsum([len(i) == 0 for i in lines]), 0)
-    styles = [7 for i in lines]
+        # demo number 3 - varying bias, fixed style
+        lines = _trim_lines(lyrics.give_up.split("\n"))
+        biases = .2*np.flip(np.cumsum([len(i) == 0 for i in lines]), 0)
+        styles = [7 for i in lines]
 
-    hand.write(
-        filename='img/give_up.svg',
-        lines=lines,
-        biases=biases,
-        styles=styles,
-    )
+        hand.write(
+            filename='img/give_up.svg',
+            lines=lines,
+            biases=biases,
+            styles=styles,
+        )

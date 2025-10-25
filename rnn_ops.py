@@ -14,7 +14,7 @@ def rnn_free_run(cell, initial_state, sequence_length, initial_input):
         output, state = cell(current_input, state)
         outputs = outputs.write(t, output)
         next_input = cell.output_function(state)
-        termination = cell.termination_condition(state)
+        termination = cell.termination_condition(state, output=next_input)
         finished = tf.logical_or(finished, termination)
         current_input = tf.where(finished[:, None], tf.zeros_like(next_input), next_input)
 
