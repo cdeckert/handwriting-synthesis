@@ -100,7 +100,7 @@ Open the Xcode project and run it on a simulator or iPhone:
 open ios/HandwritingStudio/HandwritingStudio.xcodeproj
 ```
 
-The app bundles the Core ML model and all 13 style primers. Its native style selector gives each style a descriptive name and renders a real preview from its primer data. While generating, the interface shows percentage progress based on completed Core ML inference steps. See [`docs/coreml-conversion.md`](docs/coreml-conversion.md) for conversion and parity details.
+The app bundles the Core ML model and all 13 style primers. Its native style selector gives each style a descriptive name and renders a real preview from its primer data. Users can choose common paper sizes (A5 through A3, Letter, and Legal) or screen canvases, switch orientation, and adjust the writing size. Text wraps automatically at word boundaries, and the SVG retains the selected print or pixel dimensions. While generating, the interface shows percentage progress based on completed Core ML inference steps. See [`docs/coreml-conversion.md`](docs/coreml-conversion.md) for conversion and parity details.
 
 ## Production notes
 

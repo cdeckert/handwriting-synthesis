@@ -43,10 +43,109 @@ enum TextAlignment: String, CaseIterable, Codable, Identifiable {
     }
 }
 
+enum PageOrientation: String, CaseIterable, Codable, Identifiable {
+    case portrait
+    case landscape
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .portrait: "Portrait"
+        case .landscape: "Landscape"
+        }
+    }
+}
+
+enum PageFormat: String, CaseIterable, Codable, Identifiable {
+    case a5
+    case a4
+    case a3
+    case letter
+    case legal
+    case phone
+    case tablet
+    case desktopHD
+    case square
+
+    var id: Self { self }
+
+    static let paperFormats: [PageFormat] = [.a5, .a4, .a3, .letter, .legal]
+    static let screenFormats: [PageFormat] = [.phone, .tablet, .desktopHD, .square]
+
+    var title: String {
+        switch self {
+        case .a5: "A5"
+        case .a4: "A4"
+        case .a3: "A3"
+        case .letter: "Letter"
+        case .legal: "Legal"
+        case .phone: "Phone"
+        case .tablet: "Tablet"
+        case .desktopHD: "Desktop HD"
+        case .square: "Square"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .a5: "148 × 210 mm"
+        case .a4: "210 × 297 mm"
+        case .a3: "297 × 420 mm"
+        case .letter: "8.5 × 11 in"
+        case .legal: "8.5 × 14 in"
+        case .phone: "390 × 844 px"
+        case .tablet: "1024 × 1366 px"
+        case .desktopHD: "1920 × 1080 px"
+        case .square: "1080 × 1080 px"
+        }
+    }
+
+    var defaultOrientation: PageOrientation {
+        self == .desktopHD ? .landscape : .portrait
+    }
+
+    var isPaper: Bool {
+        Self.paperFormats.contains(self)
+    }
+
+    func dimensions(orientation: PageOrientation) -> PageDimensions {
+        let natural: PageDimensions = switch self {
+        case .a5: PageDimensions(width: 419.53, height: 595.28)
+        case .a4: PageDimensions(width: 595.28, height: 841.89)
+        case .a3: PageDimensions(width: 841.89, height: 1190.55)
+        case .letter: PageDimensions(width: 612, height: 792)
+        case .legal: PageDimensions(width: 612, height: 1008)
+        case .phone: PageDimensions(width: 390, height: 844)
+        case .tablet: PageDimensions(width: 1024, height: 1366)
+        case .desktopHD: PageDimensions(width: 1920, height: 1080)
+        case .square: PageDimensions(width: 1080, height: 1080)
+        }
+
+        guard natural.width != natural.height else { return natural }
+        let shortEdge = min(natural.width, natural.height)
+        let longEdge = max(natural.width, natural.height)
+        switch orientation {
+        case .portrait:
+            return PageDimensions(width: shortEdge, height: longEdge)
+        case .landscape:
+            return PageDimensions(width: longEdge, height: shortEdge)
+        }
+    }
+}
+
+struct PageDimensions: Codable, Equatable {
+    let width: Double
+    let height: Double
+}
+
 struct GenerationRequest: Encodable, Equatable {
     let text: String
     let style: Int?
     let alignment: TextAlignment
+    let pageFormat: PageFormat
+    let pageOrientation: PageOrientation
+    let fontSize: Double
 }
 
 struct RenderPoint: Codable, Equatable {
@@ -66,6 +165,12 @@ struct RenderDocument: Codable, Equatable {
     let height: Double
     let backgroundColor: String
     let paths: [RenderedPath]
+    let unit: CanvasUnit?
+}
+
+enum CanvasUnit: String, Codable {
+    case points = "pt"
+    case pixels = "px"
 }
 
 struct SharedFile: Identifiable {

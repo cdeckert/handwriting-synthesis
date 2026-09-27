@@ -37,6 +37,12 @@ struct ContentView: View {
         .onChange(of: viewModel.text) { _, _ in viewModel.schedulePreview() }
         .onChange(of: viewModel.selectedStyleID) { _, _ in viewModel.schedulePreview() }
         .onChange(of: viewModel.alignment) { _, _ in viewModel.schedulePreview() }
+        .onChange(of: viewModel.pageFormat) { _, format in
+            viewModel.pageOrientation = format.defaultOrientation
+            viewModel.schedulePreview()
+        }
+        .onChange(of: viewModel.pageOrientation) { _, _ in viewModel.schedulePreview() }
+        .onChange(of: viewModel.fontSize) { _, _ in viewModel.schedulePreview() }
         .sheet(isPresented: $isShowingSettings) {
             SettingsView(viewModel: viewModel)
         }
@@ -63,7 +69,7 @@ struct ContentView: View {
                 }
 
             HStack {
-                Text("Up to 12 lines, 75 characters per line")
+                Text("Wraps automatically to the selected page")
                 Spacer()
                 Text("\(viewModel.text.count)/\(HandwritingViewModel.maximumTextLength)")
                     .monospacedDigit()
@@ -86,6 +92,64 @@ struct ContentView: View {
                 }
             }
             .pickerStyle(.segmented)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Page layout")
+                    .font(.subheadline.weight(.medium))
+
+                LabeledContent("Size") {
+                    Picker("Page size", selection: $viewModel.pageFormat) {
+                        Section("Paper") {
+                            ForEach(PageFormat.paperFormats) { format in
+                                Text(format.title)
+                                    .tag(format)
+                            }
+                        }
+                        Section("Screens") {
+                            ForEach(PageFormat.screenFormats) { format in
+                                Text(format.title)
+                                    .tag(format)
+                            }
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                }
+
+                Text(viewModel.pageFormat.detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Picker("Orientation", selection: $viewModel.pageOrientation) {
+                    ForEach(PageOrientation.allCases) { orientation in
+                        Text(orientation.title).tag(orientation)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                HStack {
+                    Text("Writing size")
+                    Spacer()
+                    Text("\(viewModel.fontSize, format: .number.precision(.fractionLength(0))) pt")
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                .font(.subheadline)
+
+                Slider(value: $viewModel.fontSize, in: 20 ... 64, step: 2) {
+                    Text("Writing size")
+                } minimumValueLabel: {
+                    Text("A").font(.caption2)
+                } maximumValueLabel: {
+                    Text("A").font(.title3)
+                }
+
+                Text("About \(viewModel.pageLayout.maximumCharactersPerLine) characters per line and \(viewModel.pageLayout.maximumLines) lines fit on this page.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding()
         .background(Color(uiColor: .systemBackground))
@@ -119,24 +183,28 @@ struct ContentView: View {
                     )
             }
 
-            Group {
-                if let document = viewModel.document {
-                    HandwritingCanvas(document: document)
-                } else if let message = viewModel.errorMessage {
-                    ContentUnavailableView(
-                        "Preview unavailable",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text(message)
-                    )
-                } else {
-                    ContentUnavailableView(
-                        "Start writing",
-                        systemImage: "pencil.line",
-                        description: Text("Your generated handwriting appears here.")
-                    )
+            if let document = viewModel.document {
+                HandwritingCanvas(document: document)
+                    .aspectRatio(document.width / document.height, contentMode: .fit)
+                    .frame(maxWidth: .infinity, maxHeight: 520)
+            } else {
+                Group {
+                    if let message = viewModel.errorMessage {
+                        ContentUnavailableView(
+                            "Preview unavailable",
+                            systemImage: "exclamationmark.triangle",
+                            description: Text(message)
+                        )
+                    } else {
+                        ContentUnavailableView(
+                            "Start writing",
+                            systemImage: "pencil.line",
+                            description: Text("Your generated handwriting appears here.")
+                        )
+                    }
                 }
+                .frame(maxWidth: .infinity, minHeight: 260)
             }
-            .frame(maxWidth: .infinity, minHeight: 260)
         }
         .padding()
         .background(Color(uiColor: .systemBackground))

@@ -5,18 +5,13 @@ struct HandwritingCanvas: View {
 
     var body: some View {
         Canvas { context, size in
-            let bounds = drawingBounds
-            guard bounds.width > 0, bounds.height > 0 else { return }
-
-            let inset = 14.0
-            let availableWidth = max(size.width - (inset * 2), 1)
-            let availableHeight = max(size.height - (inset * 2), 1)
+            guard document.width > 0, document.height > 0 else { return }
             let scale = min(
-                availableWidth / bounds.width,
-                availableHeight / bounds.height
+                size.width / document.width,
+                size.height / document.height
             )
-            let horizontalOffset = ((size.width - (bounds.width * scale)) / 2) - (bounds.minX * scale)
-            let verticalOffset = ((size.height - (bounds.height * scale)) / 2) - (bounds.minY * scale)
+            let horizontalOffset = (size.width - (document.width * scale)) / 2
+            let verticalOffset = (size.height - (document.height * scale)) / 2
 
             context.translateBy(x: horizontalOffset, y: verticalOffset)
             context.scaleBy(x: scale, y: scale)
@@ -44,28 +39,13 @@ struct HandwritingCanvas: View {
             }
         }
         .background(Color(hex: document.backgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .accessibilityLabel("Generated handwriting preview")
-    }
-
-    private var drawingBounds: CGRect {
-        let points = document.paths.flatMap(\.points)
-        guard
-            let minimumX = points.map(\.x).min(),
-            let maximumX = points.map(\.x).max(),
-            let minimumY = points.map(\.y).min(),
-            let maximumY = points.map(\.y).max()
-        else {
-            return CGRect(x: 0, y: 0, width: document.width, height: document.height)
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(.quaternary)
         }
-
-        let modelPadding = 12.0
-        return CGRect(
-            x: minimumX - modelPadding,
-            y: minimumY - modelPadding,
-            width: max((maximumX - minimumX) + (modelPadding * 2), 1),
-            height: max((maximumY - minimumY) + (modelPadding * 2), 1)
-        )
+        .shadow(color: .black.opacity(0.08), radius: 8, y: 3)
+        .accessibilityLabel("Generated handwriting preview")
     }
 }
 

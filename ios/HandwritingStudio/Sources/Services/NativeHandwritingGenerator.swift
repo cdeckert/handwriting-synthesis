@@ -3,8 +3,9 @@ import Foundation
 
 enum NativeHandwritingError: LocalizedError {
     case emptyText
-    case tooManyLines
+    case textTooLong
     case lineTooLong(Int)
+    case contentDoesNotFit(required: Int, available: Int)
     case unsupportedCharacter(Character)
     case missingStyle(Int)
     case invalidStyleData(Int)
@@ -14,10 +15,12 @@ enum NativeHandwritingError: LocalizedError {
         switch self {
         case .emptyText:
             "Enter some text to generate handwriting."
-        case .tooManyLines:
-            "Use no more than 12 lines."
+        case .textTooLong:
+            "Use no more than 911 characters."
         case let .lineTooLong(line):
             "Line \(line) is longer than 75 characters."
+        case let .contentDoesNotFit(required, available):
+            "This text needs \(required) lines, but the selected page and writing size fit \(available). Choose a larger page, a smaller writing size, or landscape orientation."
         case let .unsupportedCharacter(character):
             "The character ‘\(character)’ is not supported by this model."
         case let .missingStyle(style):
@@ -50,7 +53,7 @@ actor HandwritingGenerationService {
 }
 
 final class NativeHandwritingGenerator {
-    static let maximumLines = 12
+    static let maximumTextLength = 911
     static let maximumCharactersPerLine = 75
 
     private static let alphabet: [Character] = [
@@ -81,7 +84,12 @@ final class NativeHandwritingGenerator {
         bias: Double,
         progress: @escaping @Sendable (Double) -> Void = { _ in }
     ) throws -> RenderDocument {
-        let lines = try validatedLines(request.text)
+        let pageLayout = HandwritingPageLayout(
+            format: request.pageFormat,
+            orientation: request.pageOrientation,
+            fontSize: request.fontSize
+        )
+        let lines = try validatedLines(request.text, pageLayout: pageLayout)
         let styleID = request.style ?? 9
         let style = try styleStore.load(id: styleID)
         let totalSteps = lines.reduce(0) { total, line in
@@ -118,11 +126,16 @@ final class NativeHandwritingGenerator {
 
         return Self.layout(
             sampledLines: sampledLines,
-            alignment: request.alignment
+            alignment: request.alignment,
+            pageLayout: pageLayout,
+            unit: request.pageFormat.isPaper ? .points : .pixels
         )
     }
 
-    private func validatedLines(_ text: String) throws -> [String] {
+    private func validatedLines(
+        _ text: String,
+        pageLayout: HandwritingPageLayout
+    ) throws -> [String] {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw NativeHandwritingError.emptyText
         }
@@ -130,21 +143,24 @@ final class NativeHandwritingGenerator {
         let normalized = text
             .replacingOccurrences(of: "\r\n", with: "\n")
             .replacingOccurrences(of: "\r", with: "\n")
-        let lines = normalized.split(
-            separator: "\n",
-            omittingEmptySubsequences: false
-        ).map(String.init)
-
-        guard lines.count <= Self.maximumLines else {
-            throw NativeHandwritingError.tooManyLines
+        guard normalized.count <= Self.maximumTextLength else {
+            throw NativeHandwritingError.textTooLong
         }
-        for (index, line) in lines.enumerated() {
-            guard line.count <= Self.maximumCharactersPerLine else {
-                throw NativeHandwritingError.lineTooLong(index + 1)
-            }
-            for character in line where Self.characterNumbers[character] == nil {
+        for character in normalized where character != "\n" {
+            if Self.characterNumbers[character] == nil {
                 throw NativeHandwritingError.unsupportedCharacter(character)
             }
+        }
+
+        let lines = HandwritingTextLayouter.wrap(
+            normalized,
+            maximumCharactersPerLine: pageLayout.maximumCharactersPerLine
+        )
+        guard lines.count <= pageLayout.maximumLines else {
+            throw NativeHandwritingError.contentDoesNotFit(
+                required: lines.count,
+                available: pageLayout.maximumLines
+            )
         }
         return lines
     }
@@ -549,6 +565,101 @@ final class HandwritingStyleStore {
     }
 }
 
+struct HandwritingPageLayout: Equatable {
+    let dimensions: PageDimensions
+    let fontSize: Double
+    let margin: Double
+    let lineHeight: Double
+    let contentWidth: Double
+    let maximumCharactersPerLine: Int
+    let maximumLines: Int
+
+    init(
+        format: PageFormat,
+        orientation: PageOrientation,
+        fontSize: Double
+    ) {
+        let dimensions = format.dimensions(orientation: orientation)
+        let resolvedFontSize = min(max(fontSize, 18), 72)
+        let margin = max(24, min(54, min(dimensions.width, dimensions.height) * 0.075))
+        let lineHeight = resolvedFontSize * 1.55
+        let contentWidth = max(dimensions.width - (margin * 2), resolvedFontSize * 2)
+        let contentHeight = max(dimensions.height - (margin * 2), lineHeight)
+
+        self.dimensions = dimensions
+        self.fontSize = resolvedFontSize
+        self.margin = margin
+        self.lineHeight = lineHeight
+        self.contentWidth = contentWidth
+        maximumCharactersPerLine = min(
+            NativeHandwritingGenerator.maximumCharactersPerLine,
+            max(4, Int(floor(contentWidth / (resolvedFontSize * 0.34))))
+        )
+        maximumLines = max(1, Int(floor(contentHeight / lineHeight)))
+    }
+}
+
+enum HandwritingTextLayouter {
+    static func wrap(
+        _ text: String,
+        maximumCharactersPerLine: Int
+    ) -> [String] {
+        let limit = max(1, maximumCharactersPerLine)
+        let paragraphs = text.split(
+            separator: "\n",
+            omittingEmptySubsequences: false
+        ).map(String.init)
+        var lines = [String]()
+
+        for paragraph in paragraphs {
+            guard !paragraph.isEmpty else {
+                lines.append("")
+                continue
+            }
+
+            let words = paragraph.split(separator: " ").map(String.init)
+            guard !words.isEmpty else {
+                lines.append("")
+                continue
+            }
+
+            var currentLine = ""
+            for word in words {
+                if word.count > limit {
+                    if !currentLine.isEmpty {
+                        lines.append(currentLine)
+                        currentLine = ""
+                    }
+
+                    var remaining = Array(word)
+                    while remaining.count > limit {
+                        lines.append(String(remaining.prefix(limit)))
+                        remaining.removeFirst(limit)
+                    }
+                    currentLine = String(remaining)
+                    continue
+                }
+
+                let candidate = currentLine.isEmpty
+                    ? word
+                    : currentLine + " " + word
+                if candidate.count <= limit {
+                    currentLine = candidate
+                } else {
+                    lines.append(currentLine)
+                    currentLine = word
+                }
+            }
+
+            if !currentLine.isEmpty {
+                lines.append(currentLine)
+            }
+        }
+
+        return lines
+    }
+}
+
 private extension NativeHandwritingGenerator {
     struct Coordinate {
         var x: Double
@@ -558,22 +669,20 @@ private extension NativeHandwritingGenerator {
 
     static func layout(
         sampledLines: [[StrokeOffset]?],
-        alignment: TextAlignment
+        alignment: TextAlignment,
+        pageLayout: HandwritingPageLayout,
+        unit: CanvasUnit
     ) -> RenderDocument {
-        let lineHeight = 60.0
-        let viewWidth = 1000.0
-        var baseline = -3 * lineHeight / 4
         var paths = [RenderedPath]()
 
-        for offsets in sampledLines {
-            defer { baseline -= lineHeight }
+        for (lineIndex, offsets) in sampledLines.enumerated() {
             guard let offsets, !offsets.isEmpty else { continue }
 
             var x = 0.0
             var y = 0.0
             var coordinates = offsets.map { offset -> Coordinate in
-                x += Double(offset.x) * 1.5
-                y += Double(offset.y) * 1.5
+                x += Double(offset.x)
+                y += Double(offset.y)
                 return Coordinate(x: x, y: y, penUp: offset.penUp)
             }
             coordinates = denoise(coordinates)
@@ -582,24 +691,36 @@ private extension NativeHandwritingGenerator {
                 Coordinate(x: $0.x, y: -$0.y, penUp: $0.penUp)
             }
 
-            let globalMinimum = coordinates.reduce(Double.infinity) {
-                min($0, min($1.x, $1.y))
-            }
-            for index in coordinates.indices {
-                coordinates[index].x -= globalMinimum
-                coordinates[index].y -= globalMinimum + baseline
+            let minimumX = coordinates.map(\.x).min() ?? 0
+            let maximumX = coordinates.map(\.x).max() ?? minimumX
+            let minimumY = coordinates.map(\.y).min() ?? 0
+            let maximumY = coordinates.map(\.y).max() ?? minimumY
+            let rawWidth = max(maximumX - minimumX, 1)
+            let rawHeight = max(maximumY - minimumY, 1)
+            let desiredScale = pageLayout.fontSize / 24
+            let scale = min(
+                desiredScale,
+                pageLayout.contentWidth / rawWidth
+            )
+            let lineWidth = rawWidth * scale
+            let lineDrawingHeight = rawHeight * scale
+            let lineTop = pageLayout.margin
+                + (Double(lineIndex) * pageLayout.lineHeight)
+            let verticalOffset = lineTop
+                + max((pageLayout.lineHeight - lineDrawingHeight) / 2, 0)
+
+            let horizontalOffset: Double
+            if alignment == .center {
+                horizontalOffset = (pageLayout.dimensions.width - lineWidth) / 2
+            } else {
+                horizontalOffset = pageLayout.margin
             }
 
-            if alignment == .center {
-                let maximumX = coordinates.map(\.x).max() ?? 0
-                let offset = (viewWidth - maximumX) / 2
-                for index in coordinates.indices {
-                    coordinates[index].x += offset
-                }
-            } else {
-                for index in coordinates.indices {
-                    coordinates[index].x += 60
-                }
+            for index in coordinates.indices {
+                coordinates[index].x = ((coordinates[index].x - minimumX) * scale)
+                    + horizontalOffset
+                coordinates[index].y = ((coordinates[index].y - minimumY) * scale)
+                    + verticalOffset
             }
 
             var previousPenUp: Float = 1
@@ -614,17 +735,21 @@ private extension NativeHandwritingGenerator {
             paths.append(
                 RenderedPath(
                     strokeColor: "#111827",
-                    lineWidth: 2,
+                    lineWidth: max(
+                        0.75,
+                        (pageLayout.fontSize / 18) * (scale / desiredScale)
+                    ),
                     points: points
                 )
             )
         }
 
         return RenderDocument(
-            width: viewWidth,
-            height: lineHeight * Double(sampledLines.count + 1),
+            width: pageLayout.dimensions.width,
+            height: pageLayout.dimensions.height,
             backgroundColor: "#FFFFFF",
-            paths: paths
+            paths: paths,
+            unit: unit
         )
     }
 
@@ -696,9 +821,10 @@ private extension NativeHandwritingGenerator {
 
 enum NativeSVGRenderer {
     static func data(for document: RenderDocument) -> Data {
+        let unit = document.unit?.rawValue ?? ""
         var svg = """
         <?xml version="1.0" encoding="UTF-8"?>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 \(number(document.width)) \(number(document.height))" width="\(number(document.width))" height="\(number(document.height))">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 \(number(document.width)) \(number(document.height))" width="\(number(document.width))\(unit)" height="\(number(document.height))\(unit)">
         <rect width="100%" height="100%" fill="\(document.backgroundColor)"/>
 
         """

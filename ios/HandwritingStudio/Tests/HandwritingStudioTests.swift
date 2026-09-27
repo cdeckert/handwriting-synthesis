@@ -18,6 +18,36 @@ final class HandwritingStudioTests: XCTestCase {
         XCTAssertEqual(document.paths.first?.points.first, RenderPoint(x: 12.5, y: 34, move: true))
     }
 
+    func testPageFormatsAndOrientation() {
+        let portrait = PageFormat.a4.dimensions(orientation: .portrait)
+        let landscape = PageFormat.a4.dimensions(orientation: .landscape)
+
+        XCTAssertEqual(portrait.width, 595.28, accuracy: 0.01)
+        XCTAssertEqual(portrait.height, 841.89, accuracy: 0.01)
+        XCTAssertEqual(landscape.width, portrait.height, accuracy: 0.01)
+        XCTAssertEqual(landscape.height, portrait.width, accuracy: 0.01)
+        XCTAssertEqual(PageFormat.desktopHD.defaultOrientation, .landscape)
+    }
+
+    func testTextWrapsAtWordsAndKeepsExplicitBreaks() {
+        let lines = HandwritingTextLayouter.wrap(
+            "The quick brown fox\nNext paragraph",
+            maximumCharactersPerLine: 11
+        )
+
+        XCTAssertEqual(lines, ["The quick", "brown fox", "Next", "paragraph"])
+        XCTAssertTrue(lines.allSatisfy { $0.count <= 11 })
+    }
+
+    func testLongWordsWrapWithoutExceedingLineLimit() {
+        let lines = HandwritingTextLayouter.wrap(
+            "abcdefghijk",
+            maximumCharactersPerLine: 4
+        )
+
+        XCTAssertEqual(lines, ["abcd", "efgh", "ijk"])
+    }
+
     func testBundledCoreMLStepRuns() throws {
         let model = try HandwritingStep(configuration: MLModelConfiguration())
         let output = try model.prediction(
@@ -46,7 +76,10 @@ final class HandwritingStudioTests: XCTestCase {
             request: GenerationRequest(
                 text: "Hi",
                 style: 0,
-                alignment: .center
+                alignment: .center,
+                pageFormat: .a4,
+                pageOrientation: .portrait,
+                fontSize: 36
             ),
             bias: 0.75,
             progress: { progress.append($0) }
@@ -60,6 +93,7 @@ final class HandwritingStudioTests: XCTestCase {
         let svg = String(decoding: NativeSVGRenderer.data(for: document), as: UTF8.self)
         XCTAssertTrue(svg.contains("<svg"))
         XCTAssertTrue(svg.contains("<path"))
+        XCTAssertTrue(svg.contains("width=\"595.280pt\""))
         XCTAssertEqual(progress.values.first, 0)
         XCTAssertEqual(progress.values.last, 1)
         XCTAssertGreaterThan(progress.values.count, 2)

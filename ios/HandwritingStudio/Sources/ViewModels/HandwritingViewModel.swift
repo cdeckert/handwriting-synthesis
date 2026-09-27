@@ -8,6 +8,9 @@ final class HandwritingViewModel: ObservableObject {
     @Published var styles = HandwritingStyle.bundled
     @Published var selectedStyleID: Int? = 9
     @Published var alignment: TextAlignment = .center
+    @Published var pageFormat: PageFormat = .a4
+    @Published var pageOrientation: PageOrientation = .portrait
+    @Published var fontSize = 36.0
     @Published var bias = 0.75
     @Published var document: RenderDocument?
     @Published var isRendering = false
@@ -132,11 +135,22 @@ final class HandwritingViewModel: ObservableObject {
         }
     }
 
+    var pageLayout: HandwritingPageLayout {
+        HandwritingPageLayout(
+            format: pageFormat,
+            orientation: pageOrientation,
+            fontSize: fontSize
+        )
+    }
+
     private var generationRequest: GenerationRequest {
         GenerationRequest(
             text: text,
             style: selectedStyleID,
-            alignment: alignment
+            alignment: alignment,
+            pageFormat: pageFormat,
+            pageOrientation: pageOrientation,
+            fontSize: fontSize
         )
     }
 }
