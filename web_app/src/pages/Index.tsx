@@ -25,10 +25,12 @@ const alignmentOptions: AlignmentOption[] = [
 ];
 
 const MIN_PREVIEW_DELAY_MS = 400;
+const MAX_TEXT_LENGTH = 911;
 
 const Index = () => {
   const [text, setText] = useState("Hello World!\nWelcome to Handwriting Studio");
   const [styles, setStyles] = useState<HandwritingStyle[]>([]);
+  const [areStylesLoading, setAreStylesLoading] = useState(true);
   const [stylesError, setStylesError] = useState<string | null>(null);
   const [selectedStyleId, setSelectedStyleId] = useState<number | null>(null);
   const [alignment, setAlignment] = useState<TextAlignment>("center");
@@ -38,9 +40,10 @@ const Index = () => {
   const [previewError, setPreviewError] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchStyles = async () => {
       try {
-        const response = await fetch("/api/styles");
+        const response = await fetch("/api/styles", { signal: controller.signal });
         if (!response.ok) {
           throw new Error("Unable to load handwriting styles");
         }
@@ -54,21 +57,22 @@ const Index = () => {
           return data.styles.length > 0 ? data.styles[0].id : null;
         });
       } catch (error) {
+        if (controller.signal.aborted) return;
         console.error(error);
         setStylesError(error instanceof Error ? error.message : "Unable to load handwriting styles");
         setStyles([]);
         setSelectedStyleId(null);
+      } finally {
+        if (!controller.signal.aborted) setAreStylesLoading(false);
       }
     };
 
     fetchStyles();
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
-    if (!text.trim()) {
-      setPreviewSvg("");
-      setPreviewError(null);
-      setIsPreviewLoading(false);
+    if (!text.trim() || areStylesLoading) {
       return;
     }
 
@@ -116,7 +120,7 @@ const Index = () => {
       controller.abort();
       clearTimeout(timeout);
     };
-  }, [text, selectedStyleId, alignment]);
+  }, [text, selectedStyleId, alignment, areStylesLoading]);
 
   const previewContent = useMemo(() => {
     if (!text.trim()) {
@@ -201,31 +205,36 @@ const Index = () => {
         <div className="grid lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
           <Card className="p-6 space-y-6 shadow-lg">
             <div>
-              <label className="block text-sm font-semibold mb-2 text-foreground">
+              <label htmlFor="handwriting-text" className="block text-sm font-semibold mb-2 text-foreground">
                 Your Text
               </label>
               <Textarea
+                id="handwriting-text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Enter your text here..."
+                maxLength={MAX_TEXT_LENGTH}
                 className="min-h-[200px] resize-none text-base"
               />
-              <p className="text-xs text-muted-foreground mt-2">
-                Tip: keep each line under 75 characters for best results.
-              </p>
+              <div className="mt-2 flex justify-between gap-4 text-xs text-muted-foreground">
+                <p>Up to 12 lines and 75 characters per line.</p>
+                <p aria-label={`${text.length} of ${MAX_TEXT_LENGTH} characters`}>
+                  {text.length}/{MAX_TEXT_LENGTH}
+                </p>
+              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2 text-foreground">
+              <label htmlFor="handwriting-style" className="block text-sm font-semibold mb-2 text-foreground">
                 Handwriting Style
               </label>
               <Select
                 value={selectedStyleId !== null ? String(selectedStyleId) : undefined}
                 onValueChange={(value) => setSelectedStyleId(Number(value))}
-                disabled={styles.length === 0}
+                disabled={areStylesLoading || styles.length === 0}
               >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={stylesError ?? "Select a style"} />
+                <SelectTrigger id="handwriting-style" className="w-full">
+                  <SelectValue placeholder={stylesError ?? (areStylesLoading ? "Loading styles…" : "Select a style")} />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
                   {styles.map((style) => (
@@ -241,14 +250,14 @@ const Index = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-2 text-foreground">
+              <label htmlFor="text-alignment" className="block text-sm font-semibold mb-2 text-foreground">
                 Text Alignment
               </label>
               <Select
                 value={alignment}
                 onValueChange={(value) => setAlignment(value as TextAlignment)}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="text-alignment" className="w-full">
                   <SelectValue placeholder="Select alignment" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
@@ -279,7 +288,11 @@ const Index = () => {
           </Card>
 
           <Card className="p-6 flex items-center justify-center shadow-lg bg-white dark:bg-card">
-            <div className="w-full h-full min-h-[400px] flex items-center justify-center">
+            <div
+              className="w-full h-full min-h-[400px] flex items-center justify-center"
+              aria-live="polite"
+              aria-busy={isPreviewLoading}
+            >
               {previewContent}
             </div>
           </Card>

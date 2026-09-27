@@ -5,3 +5,14 @@ data/processed
 
 logs
 predictions
+__pycache__/
+*.py[cod]
+*.so
+*.DS_Store
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+web_app/node_modules/
+web_app/dist/

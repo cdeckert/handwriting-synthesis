@@ -1,22 +1,26 @@
-import os
 import logging
+import os
+from pathlib import Path
 
 import numpy as np
 import svgwrite
+
+os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
 
 import drawing
 import lyrics
 from rnn import rnn
 
+BASE_DIR = Path(__file__).resolve().parent
 
-class Hand(object):
+
+class Hand:
 
     def __init__(self):
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
         self.nn = rnn(
-            log_dir='logs',
-            checkpoint_dir='checkpoints',
-            prediction_dir='predictions',
+            log_dir=str(BASE_DIR / 'logs'),
+            checkpoint_dir=str(BASE_DIR / 'checkpoints'),
+            prediction_dir=str(BASE_DIR / 'predictions'),
             learning_rates=[.0001, .00005, .00002],
             batch_sizes=[32, 64, 64],
             patiences=[1500, 1000, 500],
@@ -48,32 +52,48 @@ class Hand(object):
         stroke_widths=None,
         alignment="center",
     ):
+        document = self.render(
+            lines=lines,
+            biases=biases,
+            styles=styles,
+            stroke_colors=stroke_colors,
+            stroke_widths=stroke_widths,
+            alignment=alignment,
+        )
+        self._draw(document, filename)
+
+    def render(
+        self,
+        lines,
+        biases=None,
+        styles=None,
+        stroke_colors=None,
+        stroke_widths=None,
+        alignment="center",
+    ):
+        """Render handwriting into a platform-neutral vector document."""
+
         valid_char_set = set(drawing.alphabet)
         if alignment not in {"left", "center"}:
             raise ValueError("Alignment must be either 'left' or 'center'.")
         for line_num, line in enumerate(lines):
             if len(line) > 75:
                 raise ValueError(
-                    (
-                        "Each line must be at most 75 characters. "
-                        "Line {} contains {}"
-                    ).format(line_num, len(line))
+                    "Each line must be at most 75 characters. "
+                    f"Line {line_num} contains {len(line)}"
                 )
 
             for char in line:
                 if char not in valid_char_set:
                     raise ValueError(
-                        (
-                            "Invalid character {} detected in line {}. "
-                            "Valid character set is {}"
-                        ).format(char, line_num, valid_char_set)
+                        f"Invalid character {char} detected in line {line_num}. "
+                        f"Valid character set is {valid_char_set}"
                     )
 
         strokes = self._sample(lines, biases=biases, styles=styles)
-        self._draw(
+        return self._layout(
             strokes,
             lines,
-            filename,
             stroke_colors=stroke_colors,
             stroke_widths=stroke_widths,
             alignment=alignment,
@@ -90,9 +110,9 @@ class Hand(object):
         chars_len = np.zeros([num_samples])
 
         if styles is not None:
-            for i, (cs, style) in enumerate(zip(lines, styles)):
-                x_p = np.load('styles/style-{}-strokes.npy'.format(style))
-                c_p = np.load('styles/style-{}-chars.npy'.format(style)).tobytes().decode('utf-8')
+            for i, (cs, style) in enumerate(zip(lines, styles, strict=True)):
+                x_p = np.load(BASE_DIR / f'styles/style-{style}-strokes.npy')
+                c_p = np.load(BASE_DIR / f'styles/style-{style}-chars.npy').tobytes().decode('utf-8')
 
                 c_p = str(c_p) + " " + cs
                 c_p = drawing.encode_ascii(c_p)
@@ -125,11 +145,10 @@ class Hand(object):
         samples = [sample[~np.all(sample == 0.0, axis=1)] for sample in samples]
         return samples
 
-    def _draw(
+    def _layout(
         self,
         strokes,
         lines,
-        filename,
         stroke_colors=None,
         stroke_widths=None,
         alignment="center",
@@ -140,13 +159,12 @@ class Hand(object):
         line_height = 60
         view_width = 1000
         view_height = line_height*(len(strokes) + 1)
-
-        dwg = svgwrite.Drawing(filename=filename)
-        dwg.viewbox(width=view_width, height=view_height)
-        dwg.add(dwg.rect(insert=(0, 0), size=(view_width, view_height), fill='white'))
+        paths = []
 
         initial_coord = np.array([0, -(3*line_height / 4)])
-        for offsets, line, color, width in zip(strokes, lines, stroke_colors, stroke_widths):
+        for offsets, line, color, width in zip(
+            strokes, lines, stroke_colors, stroke_widths, strict=True
+        ):
 
             if not line:
                 initial_coord[1] -= line_height
@@ -166,15 +184,59 @@ class Hand(object):
                 strokes[:, 0] += left_padding
 
             prev_eos = 1.0
-            p = "M{},{} ".format(0, 0)
-            for x, y, eos in zip(*strokes.T):
-                p += '{}{},{} '.format('M' if prev_eos == 1.0 else 'L', x, y)
+            points = []
+            for x, y, eos in zip(*strokes.T, strict=True):
+                points.append(
+                    {
+                        "x": float(x),
+                        "y": float(y),
+                        "move": bool(prev_eos == 1.0),
+                    }
+                )
                 prev_eos = eos
-            path = svgwrite.path.Path(p)
-            path = path.stroke(color=color, width=width, linecap='round').fill("none")
-            dwg.add(path)
+            paths.append(
+                {
+                    "strokeColor": color,
+                    "lineWidth": float(width),
+                    "points": points,
+                }
+            )
 
             initial_coord[1] -= line_height
+
+        return {
+            "width": float(view_width),
+            "height": float(view_height),
+            "backgroundColor": "#FFFFFF",
+            "paths": paths,
+        }
+
+    def _draw(self, document, filename):
+        """Write a vector document to SVG."""
+
+        dwg = svgwrite.Drawing(filename=str(filename))
+        dwg.viewbox(width=document["width"], height=document["height"])
+        dwg.add(
+            dwg.rect(
+                insert=(0, 0),
+                size=(document["width"], document["height"]),
+                fill=document["backgroundColor"],
+            )
+        )
+
+        for rendered_path in document["paths"]:
+            commands = []
+            for point in rendered_path["points"]:
+                command = "M" if point["move"] else "L"
+                commands.append(f'{command}{point["x"]},{point["y"]}')
+
+            path = svgwrite.path.Path(" ".join(commands))
+            path = path.stroke(
+                color=rendered_path["strokeColor"],
+                width=rendered_path["lineWidth"],
+                linecap="round",
+            ).fill("none")
+            dwg.add(path)
 
         dwg.save()
 

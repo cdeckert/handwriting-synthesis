@@ -5,9 +5,11 @@ from __future__ import annotations
 import argparse
 import os
 import tempfile
+from collections.abc import Iterable
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterable, List, Tuple
+from threading import Lock
+from typing import TYPE_CHECKING
 
 from flask import (
     Flask,
@@ -19,13 +21,43 @@ from flask import (
     send_from_directory,
 )
 
-from demo import Hand
+if TYPE_CHECKING:
+    from demo import Hand
 
+
+BASE_DIR = Path(__file__).resolve().parent
+DIST_DIR = BASE_DIR / "web_app" / "dist"
+DIST_INDEX_FILE = DIST_DIR / "index.html"
+STYLES_DIR = BASE_DIR / "styles"
+
+MAX_LINE_LENGTH = 75
+MAX_LINES = 12
+MAX_TEXT_LENGTH = (MAX_LINE_LENGTH * MAX_LINES) + MAX_LINES - 1
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024
 
-DIST_DIR = Path(__file__).resolve().parent / "web_app" / "dist"
-DIST_INDEX_FILE = DIST_DIR / "index.html"
+_generation_lock = Lock()
+
+
+@app.after_request
+def add_security_headers(response: Response) -> Response:
+    """Apply safe defaults to both API and static responses."""
+
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    if request.path.startswith("/api/"):
+        response.headers.setdefault("Cache-Control", "no-store")
+    return response
+
+
+@app.errorhandler(413)
+def request_too_large(_error):
+    message = "Request payload is too large."
+    if request.path.startswith("/api/"):
+        return jsonify({"error": message}), 413
+    return message, 413
 
 TEMPLATE = """<!doctype html>
 <html lang=\"en\">
@@ -156,42 +188,58 @@ TEMPLATE = """<!doctype html>
 def get_hand() -> Hand:
     """Lazily create the Hand model instance."""
 
+    from demo import Hand
+
     return Hand()
 
 
-def _available_styles() -> List[int]:
+def _available_styles() -> list[int]:
     """Discover the available handwriting styles from the styles directory."""
 
-    style_ids = []
-    styles_path = os.path.join(os.path.dirname(__file__), "styles")
-    if not os.path.isdir(styles_path):
-        return style_ids
+    if not STYLES_DIR.is_dir():
+        return []
 
-    for filename in os.listdir(styles_path):
-        if filename.startswith("style-") and filename.endswith("-strokes.npy"):
-            try:
-                style_id = int(filename.split("-")[1])
-            except ValueError:
-                continue
-            style_ids.append(style_id)
+    style_ids = []
+    for path in STYLES_DIR.glob("style-*-strokes.npy"):
+        try:
+            style_ids.append(int(path.stem.split("-")[1]))
+        except (IndexError, ValueError):
+            continue
 
     return sorted(set(style_ids))
+
+
+def _validate_lines(lines: list[str]) -> None:
+    if len(lines) > MAX_LINES:
+        raise ValueError(f"Please enter no more than {MAX_LINES} lines.")
+
+    for line_number, line in enumerate(lines, start=1):
+        if len(line) > MAX_LINE_LENGTH:
+            raise ValueError(
+                f"Line {line_number} contains {len(line)} characters; "
+                f"the limit is {MAX_LINE_LENGTH}."
+            )
+
+
+def _normalize_text(text_raw: str) -> list[str]:
+    if not isinstance(text_raw, str) or not text_raw.strip():
+        raise ValueError("Please enter some text.")
+    if len(text_raw) > MAX_TEXT_LENGTH:
+        raise ValueError(f"Text must contain at most {MAX_TEXT_LENGTH} characters.")
+
+    lines = [line.rstrip() for line in text_raw.splitlines()]
+    _validate_lines(lines)
+    return lines
 
 
 def _prepare_generation_inputs(
     text_raw: str,
     style_raw,
     alignment_raw: str,
-) -> Tuple[List[str], int | None, str]:
+) -> tuple[list[str], int | None, str]:
     """Validate and normalize inputs for preview/download requests."""
 
-    if not isinstance(text_raw, str):
-        raise ValueError("Please enter some text.")
-
-    if not text_raw.strip():
-        raise ValueError("Please enter some text.")
-
-    lines = [line.rstrip() for line in text_raw.splitlines()]
+    lines = _normalize_text(text_raw)
 
     styles = _available_styles()
     default_style = styles[0] if styles else None
@@ -220,22 +268,40 @@ def _generate_svg(
     if alignment not in {"left", "center"}:
         raise ValueError("Invalid alignment option.")
 
-    hand = get_hand()
+    normalized_lines = list(lines)
+    _validate_lines(normalized_lines)
 
     with tempfile.NamedTemporaryFile(suffix=".svg", delete=False) as tmp_file:
-        temp_name = tmp_file.name
+        temp_path = Path(tmp_file.name)
 
     try:
         kwargs = {"alignment": alignment}
         if style is not None:
-            kwargs["styles"] = [style for _ in lines]
+            kwargs["styles"] = [style] * len(normalized_lines)
 
-        hand.write(filename=temp_name, lines=lines, **kwargs)
-        with open(temp_name, "rb") as fh:
-            return fh.read()
+        # The restored TensorFlow 1-style session is stateful and not safe to
+        # execute concurrently inside a threaded WSGI process.
+        with _generation_lock:
+            get_hand().write(filename=temp_path, lines=normalized_lines, **kwargs)
+        return temp_path.read_bytes()
     finally:
-        if os.path.exists(temp_name):
-            os.remove(temp_name)
+        temp_path.unlink(missing_ok=True)
+
+
+def _render_document(
+    lines: Iterable[str], *, style: int | None = None, alignment: str = "center"
+) -> dict:
+    """Generate a platform-neutral vector document for native clients."""
+
+    normalized_lines = list(lines)
+    _validate_lines(normalized_lines)
+
+    kwargs = {"alignment": alignment}
+    if style is not None:
+        kwargs["styles"] = [style] * len(normalized_lines)
+
+    with _generation_lock:
+        return get_hand().render(lines=normalized_lines, **kwargs)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -244,7 +310,6 @@ def index():
 
     styles = _available_styles()
     default_style = styles[0] if styles else None
-    valid_alignments = {"left", "center"}
     default_alignment = "center"
 
     if request.method == "GET":
@@ -264,52 +329,10 @@ def index():
         text = request.form.get("text", "")
         style_raw = request.form.get("style")
         alignment_raw = request.form.get("alignment", default_alignment)
-        if alignment_raw not in valid_alignments:
-            return render_template_string(
-                TEMPLATE,
-                error="Invalid alignment selected.",
-                text=text,
-                styles=styles,
-                selected_style=default_style,
-                selected_alignment=default_alignment,
-            )
-
-        alignment = alignment_raw
-        if not text.strip():
-            return render_template_string(
-                TEMPLATE,
-                error="Please enter some text.",
-                text=text,
-                styles=styles,
-                selected_style=default_style,
-                selected_alignment=alignment,
-            )
-
-        lines = [line.rstrip() for line in text.splitlines()]
-
         try:
-            style = int(style_raw) if style_raw is not None else default_style
-        except (TypeError, ValueError):
-            return render_template_string(
-                TEMPLATE,
-                error="Invalid style selected.",
-                text=text,
-                styles=styles,
-                selected_style=default_style,
-                selected_alignment=alignment,
+            lines, style, alignment = _prepare_generation_inputs(
+                text, style_raw, alignment_raw
             )
-
-        if style is not None and style not in styles:
-            return render_template_string(
-                TEMPLATE,
-                error="Selected style is not available.",
-                text=text,
-                styles=styles,
-                selected_style=default_style,
-                selected_alignment=alignment,
-            )
-
-        try:
             svg_bytes = _generate_svg(lines, style=style, alignment=alignment)
         except ValueError as exc:
             return render_template_string(
@@ -317,39 +340,18 @@ def index():
                 error=str(exc),
                 text=text,
                 styles=styles,
-                selected_style=style,
-                selected_alignment=alignment,
+                selected_style=default_style,
+                selected_alignment=(
+                    alignment_raw
+                    if alignment_raw in {"left", "center"}
+                    else default_alignment
+                ),
             )
 
         headers = {"Content-Disposition": "attachment; filename=handwriting.svg"}
         return Response(svg_bytes, mimetype="image/svg+xml", headers=headers)
 
     abort(405)
-
-
-@app.route("/preview", methods=["POST"])
-def preview() -> Response:
-    """Return a JSON payload containing an inline SVG preview."""
-
-    payload = request.get_json(silent=True) or {}
-    text = payload.get("text", "")
-    style_raw = payload.get("style")
-    alignment_raw = payload.get("alignment", "center")
-
-    if not isinstance(text, str) or not text.strip():
-        return jsonify({"svg": "<p class=\"help\">Enter text to see the preview.</p>", "error": "Please enter some text."})
-
-    try:
-        lines, style, alignment = _prepare_generation_inputs(text, style_raw, alignment_raw)
-    except ValueError as exc:
-        return jsonify({"svg": f"<p class=\"error\">{exc}</p>", "error": str(exc)}), 400
-
-    try:
-        svg_bytes = _generate_svg(lines, style=style, alignment=alignment)
-    except ValueError as exc:
-        return jsonify({"svg": f"<p class=\"error\">{exc}</p>", "error": str(exc)}), 400
-
-    return jsonify({"svg": svg_bytes.decode("utf-8")})
 
 
 @app.route("/api/styles", methods=["GET"])
@@ -361,21 +363,29 @@ def api_styles() -> Response:
     return jsonify(payload)
 
 
-def _parse_generation_payload(require_text: bool = True) -> Tuple[List[str], int | None, str]:
+def _parse_generation_payload() -> tuple[list[str], int | None, str]:
     payload = request.get_json(silent=True) or {}
     text = payload.get("text", "")
     style_raw = payload.get("style")
     alignment_raw = payload.get("alignment", "center")
 
-    if not isinstance(text, str):
-        raise ValueError("Please enter some text.")
-
-    if require_text and not text.strip():
-        raise ValueError("Please enter some text.")
-
     return _prepare_generation_inputs(text, style_raw, alignment_raw)
 
 
+@app.route("/api/health", methods=["GET"])
+def api_health() -> Response:
+    """Report process readiness without eagerly loading the ML model."""
+
+    return jsonify(
+        {
+            "status": "ok",
+            "model_loaded": get_hand.cache_info().currsize > 0,
+            "styles": len(_available_styles()),
+        }
+    )
+
+
+@app.route("/preview", methods=["POST"])
 @app.route("/api/preview", methods=["POST"])
 def api_preview() -> Response:
     """Generate an inline SVG preview for the React UI."""
@@ -411,6 +421,19 @@ def api_generate() -> Response:
     return Response(svg_bytes, mimetype="image/svg+xml", headers=headers)
 
 
+@app.route("/api/render", methods=["POST"])
+def api_render() -> Response:
+    """Return vector paths for native Canvas/Core Graphics clients."""
+
+    try:
+        lines, style, alignment = _parse_generation_payload()
+        document = _render_document(lines, style=style, alignment=alignment)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return jsonify(document)
+
+
 @app.route("/assets/<path:filename>")
 def spa_assets(filename: str):
     """Serve compiled frontend asset files if they exist."""
@@ -438,7 +461,7 @@ def spa_catch_all(filename: str):
     abort(404)
 
 
-def _parse_args(argv: List[str] | None = None) -> argparse.Namespace:
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Parse command line arguments for the web server entry point."""
 
     parser = argparse.ArgumentParser(description="Run the handwriting synthesis web UI.")
@@ -457,7 +480,7 @@ def _parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: List[str] | None = None) -> None:
+def main(argv: list[str] | None = None) -> None:
     """Entry point for running the development server directly."""
 
     args = _parse_args(argv)
@@ -466,4 +489,3 @@ def main(argv: List[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-

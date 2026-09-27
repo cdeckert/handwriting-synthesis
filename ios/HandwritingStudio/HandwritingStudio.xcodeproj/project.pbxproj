@@ -1,0 +1,608 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0416ECC91577DB4B3A117BF7 /* HandwritingStudioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 055DF83509349D0FF64587F7 /* HandwritingStudioTests.swift */; };
+		2383629788C130DE158F0210 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A99255518F1376D2A6592686 /* ContentView.swift */; };
+		2639DAC9B62299DF9104A19D /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A6A0512DC1A7D48DD42DF85 /* ShareSheet.swift */; };
+		2B07AF312F8C5DD911C2E39E /* style-8-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 402B268DB13021585459A124 /* style-8-strokes.npy */; };
+		2FD98EECC3D3F98A5E57828A /* style-12-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 86E02533B4FFD5323809C591 /* style-12-strokes.npy */; };
+		3890C68EE6A92D0E6B7B6A22 /* HandwritingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051331C8D500EB3D36634E1 /* HandwritingModels.swift */; };
+		3F86851F63F06D41EFE6FC42 /* HandwritingStep.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 64D38438CB6FD5AB82A94FB7 /* HandwritingStep.mlpackage */; };
+		438141CD64F9D512B7910270 /* style-9-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 7CEC1D04183A5CF3254DC8E3 /* style-9-strokes.npy */; };
+		4426B94A7643AE0EB3EF0C51 /* style-7-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 4FDA5E80297BDB28EE42CC90 /* style-7-chars.npy */; };
+		4D31B92F39C2D5A3F456B5E2 /* style-5-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = ABE95A75F73986FA0BAD0455 /* style-5-strokes.npy */; };
+		4E6E5CBE3088A3A46B2B416D /* style-8-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = B34473E384879D078B46195E /* style-8-chars.npy */; };
+		53F179D2F7EE8DB971426324 /* style-10-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 4A834C1636C5299C0616AB5C /* style-10-strokes.npy */; };
+		55F5C5068C67A6ABF87FA109 /* style-7-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 6D0B12396B204E01626F6472 /* style-7-strokes.npy */; };
+		58F94CE90386C943B867B4D4 /* HandwritingStylePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F43E3DD5E3DA4AEE72547472 /* HandwritingStylePicker.swift */; };
+		5E4081E774BAE8F976DCFAB2 /* style-2-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 9BB34116E120EF19DA94C8D1 /* style-2-strokes.npy */; };
+		8071013728484314CBC60A62 /* style-11-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = DCF9ADA94DE3C8628AD6FEE0 /* style-11-chars.npy */; };
+		867F687F62BC39411082EA84 /* style-0-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 0AE77838DF7D1FB5E9D7C3BF /* style-0-chars.npy */; };
+		86C6CEBC4C20772E307E47B8 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D5C2FDABB48400635D5BC3 /* SettingsView.swift */; };
+		88069A4673A2083AC828530D /* NativeHandwritingGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD2A303AD342996ABB4E696 /* NativeHandwritingGenerator.swift */; };
+		963D550D50D6FFB96376B2B6 /* style-1-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = F35322FDFCDE2430E025AC50 /* style-1-strokes.npy */; };
+		988D140E7C366474F8830087 /* style-4-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 6FC24FB1CBE50A1F31A6DD09 /* style-4-strokes.npy */; };
+		9E7F2D59EC74E1C2E5F32A5E /* style-3-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = E295FF7CB4E71861EC1F8EDD /* style-3-strokes.npy */; };
+		A4EAAA357F723A1C332D7052 /* style-1-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 8406883F73026A502250C2CC /* style-1-chars.npy */; };
+		A7416FF1BDB4C4109C7F3D45 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9CA51F58731B4EEFDFB62E3A /* Assets.xcassets */; };
+		AF58DD94BC3059118BD91384 /* HandwritingCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65FBA6236A705CB7FAC52561 /* HandwritingCanvas.swift */; };
+		C098843B90EB33E8A1F70087 /* HandwritingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6412DAB3292FB83547B5F450 /* HandwritingViewModel.swift */; };
+		C3C7F5D4D4437891A15BBAFC /* HandwritingStudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B4A9157C2FF80379E5AF9F /* HandwritingStudioApp.swift */; };
+		CF16090C0D71BC67EB802F54 /* style-6-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 071B98B0C76F1514E53EDD4F /* style-6-chars.npy */; };
+		D1C296CA3C06744B2FE5CB94 /* style-5-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 52558A956975A6E32F01F22D /* style-5-chars.npy */; };
+		D4E6B18AB95EA90B14EE01F7 /* style-6-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = B0283DA4B6DBA3510B1FDB47 /* style-6-strokes.npy */; };
+		D937D8EE93A3D673A3A0FF1E /* style-11-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 6B5C8878F463F749537EDA4C /* style-11-strokes.npy */; };
+		E42864E4ED5DB8879EF91023 /* style-9-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 7BA0C2205D00C037BEBB9423 /* style-9-chars.npy */; };
+		E8C99706A324155DC42146E8 /* style-2-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = BE3B9F6DD4588B2EDCE5C1D9 /* style-2-chars.npy */; };
+		EC122EA173451FA35B2D55C8 /* style-12-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 769064CF4B3D78229D30F01D /* style-12-chars.npy */; };
+		EFD21DCD3E381814E44BAB84 /* style-10-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 266E4FEEB44897CAD85021C0 /* style-10-chars.npy */; };
+		F48B9266EE3C1681367FB527 /* style-4-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = BB42A01DFF49C36A23EE0F91 /* style-4-chars.npy */; };
+		F6040BE117D7CA4E9E5C40AD /* style-0-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 435FB1B644BBFBA5267AD88D /* style-0-strokes.npy */; };
+		FE22155C159FC7F1747220BC /* style-3-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 7E7B79A939B3745D7AFC1DDE /* style-3-chars.npy */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D9E5A1D8923441C91D192318 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 862C1AD7B901CAA5C8F37489 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E0347E180E7947391A122ECA;
+			remoteInfo = HandwritingStudio;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		055DF83509349D0FF64587F7 /* HandwritingStudioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingStudioTests.swift; sourceTree = "<group>"; };
+		071B98B0C76F1514E53EDD4F /* style-6-chars.npy */ = {isa = PBXFileReference; path = "style-6-chars.npy"; sourceTree = "<group>"; };
+		0AE77838DF7D1FB5E9D7C3BF /* style-0-chars.npy */ = {isa = PBXFileReference; path = "style-0-chars.npy"; sourceTree = "<group>"; };
+		1797F275797BBA10DEC656E8 /* HandwritingStudioTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HandwritingStudioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		266E4FEEB44897CAD85021C0 /* style-10-chars.npy */ = {isa = PBXFileReference; path = "style-10-chars.npy"; sourceTree = "<group>"; };
+		402B268DB13021585459A124 /* style-8-strokes.npy */ = {isa = PBXFileReference; path = "style-8-strokes.npy"; sourceTree = "<group>"; };
+		435FB1B644BBFBA5267AD88D /* style-0-strokes.npy */ = {isa = PBXFileReference; path = "style-0-strokes.npy"; sourceTree = "<group>"; };
+		4A6A0512DC1A7D48DD42DF85 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		4A834C1636C5299C0616AB5C /* style-10-strokes.npy */ = {isa = PBXFileReference; path = "style-10-strokes.npy"; sourceTree = "<group>"; };
+		4FDA5E80297BDB28EE42CC90 /* style-7-chars.npy */ = {isa = PBXFileReference; path = "style-7-chars.npy"; sourceTree = "<group>"; };
+		52558A956975A6E32F01F22D /* style-5-chars.npy */ = {isa = PBXFileReference; path = "style-5-chars.npy"; sourceTree = "<group>"; };
+		6412DAB3292FB83547B5F450 /* HandwritingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingViewModel.swift; sourceTree = "<group>"; };
+		64D38438CB6FD5AB82A94FB7 /* HandwritingStep.mlpackage */ = {isa = PBXFileReference; path = HandwritingStep.mlpackage; sourceTree = "<group>"; };
+		65FBA6236A705CB7FAC52561 /* HandwritingCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingCanvas.swift; sourceTree = "<group>"; };
+		6B5C8878F463F749537EDA4C /* style-11-strokes.npy */ = {isa = PBXFileReference; path = "style-11-strokes.npy"; sourceTree = "<group>"; };
+		6D0B12396B204E01626F6472 /* style-7-strokes.npy */ = {isa = PBXFileReference; path = "style-7-strokes.npy"; sourceTree = "<group>"; };
+		6FC24FB1CBE50A1F31A6DD09 /* style-4-strokes.npy */ = {isa = PBXFileReference; path = "style-4-strokes.npy"; sourceTree = "<group>"; };
+		769064CF4B3D78229D30F01D /* style-12-chars.npy */ = {isa = PBXFileReference; path = "style-12-chars.npy"; sourceTree = "<group>"; };
+		7BA0C2205D00C037BEBB9423 /* style-9-chars.npy */ = {isa = PBXFileReference; path = "style-9-chars.npy"; sourceTree = "<group>"; };
+		7CEC1D04183A5CF3254DC8E3 /* style-9-strokes.npy */ = {isa = PBXFileReference; path = "style-9-strokes.npy"; sourceTree = "<group>"; };
+		7E7B79A939B3745D7AFC1DDE /* style-3-chars.npy */ = {isa = PBXFileReference; path = "style-3-chars.npy"; sourceTree = "<group>"; };
+		8406883F73026A502250C2CC /* style-1-chars.npy */ = {isa = PBXFileReference; path = "style-1-chars.npy"; sourceTree = "<group>"; };
+		86E02533B4FFD5323809C591 /* style-12-strokes.npy */ = {isa = PBXFileReference; path = "style-12-strokes.npy"; sourceTree = "<group>"; };
+		9051331C8D500EB3D36634E1 /* HandwritingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingModels.swift; sourceTree = "<group>"; };
+		9BB34116E120EF19DA94C8D1 /* style-2-strokes.npy */ = {isa = PBXFileReference; path = "style-2-strokes.npy"; sourceTree = "<group>"; };
+		9CA51F58731B4EEFDFB62E3A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A1B4A9157C2FF80379E5AF9F /* HandwritingStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingStudioApp.swift; sourceTree = "<group>"; };
+		A99255518F1376D2A6592686 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		ABE95A75F73986FA0BAD0455 /* style-5-strokes.npy */ = {isa = PBXFileReference; path = "style-5-strokes.npy"; sourceTree = "<group>"; };
+		B0283DA4B6DBA3510B1FDB47 /* style-6-strokes.npy */ = {isa = PBXFileReference; path = "style-6-strokes.npy"; sourceTree = "<group>"; };
+		B34473E384879D078B46195E /* style-8-chars.npy */ = {isa = PBXFileReference; path = "style-8-chars.npy"; sourceTree = "<group>"; };
+		BB42A01DFF49C36A23EE0F91 /* style-4-chars.npy */ = {isa = PBXFileReference; path = "style-4-chars.npy"; sourceTree = "<group>"; };
+		BE3B9F6DD4588B2EDCE5C1D9 /* style-2-chars.npy */ = {isa = PBXFileReference; path = "style-2-chars.npy"; sourceTree = "<group>"; };
+		D81DCDF6DA1786B69568ECC8 /* HandwritingStudio.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = HandwritingStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DCF9ADA94DE3C8628AD6FEE0 /* style-11-chars.npy */ = {isa = PBXFileReference; path = "style-11-chars.npy"; sourceTree = "<group>"; };
+		DFD2A303AD342996ABB4E696 /* NativeHandwritingGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeHandwritingGenerator.swift; sourceTree = "<group>"; };
+		E295FF7CB4E71861EC1F8EDD /* style-3-strokes.npy */ = {isa = PBXFileReference; path = "style-3-strokes.npy"; sourceTree = "<group>"; };
+		F35322FDFCDE2430E025AC50 /* style-1-strokes.npy */ = {isa = PBXFileReference; path = "style-1-strokes.npy"; sourceTree = "<group>"; };
+		F43E3DD5E3DA4AEE72547472 /* HandwritingStylePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingStylePicker.swift; sourceTree = "<group>"; };
+		F5D5C2FDABB48400635D5BC3 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		4FE67C567DDFB4F6270616DE /* Styles */ = {
+			isa = PBXGroup;
+			children = (
+				0AE77838DF7D1FB5E9D7C3BF /* style-0-chars.npy */,
+				435FB1B644BBFBA5267AD88D /* style-0-strokes.npy */,
+				8406883F73026A502250C2CC /* style-1-chars.npy */,
+				F35322FDFCDE2430E025AC50 /* style-1-strokes.npy */,
+				BE3B9F6DD4588B2EDCE5C1D9 /* style-2-chars.npy */,
+				9BB34116E120EF19DA94C8D1 /* style-2-strokes.npy */,
+				7E7B79A939B3745D7AFC1DDE /* style-3-chars.npy */,
+				E295FF7CB4E71861EC1F8EDD /* style-3-strokes.npy */,
+				BB42A01DFF49C36A23EE0F91 /* style-4-chars.npy */,
+				6FC24FB1CBE50A1F31A6DD09 /* style-4-strokes.npy */,
+				52558A956975A6E32F01F22D /* style-5-chars.npy */,
+				ABE95A75F73986FA0BAD0455 /* style-5-strokes.npy */,
+				071B98B0C76F1514E53EDD4F /* style-6-chars.npy */,
+				B0283DA4B6DBA3510B1FDB47 /* style-6-strokes.npy */,
+				4FDA5E80297BDB28EE42CC90 /* style-7-chars.npy */,
+				6D0B12396B204E01626F6472 /* style-7-strokes.npy */,
+				B34473E384879D078B46195E /* style-8-chars.npy */,
+				402B268DB13021585459A124 /* style-8-strokes.npy */,
+				7BA0C2205D00C037BEBB9423 /* style-9-chars.npy */,
+				7CEC1D04183A5CF3254DC8E3 /* style-9-strokes.npy */,
+				266E4FEEB44897CAD85021C0 /* style-10-chars.npy */,
+				4A834C1636C5299C0616AB5C /* style-10-strokes.npy */,
+				DCF9ADA94DE3C8628AD6FEE0 /* style-11-chars.npy */,
+				6B5C8878F463F749537EDA4C /* style-11-strokes.npy */,
+				769064CF4B3D78229D30F01D /* style-12-chars.npy */,
+				86E02533B4FFD5323809C591 /* style-12-strokes.npy */,
+			);
+			path = Styles;
+			sourceTree = "<group>";
+		};
+		572D5A8C3C506BE38D9552F1 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				A1B4A9157C2FF80379E5AF9F /* HandwritingStudioApp.swift */,
+				F6F23BB7F4AF8B2D5636FA69 /* Models */,
+				BF961B57B135533B06CD61E6 /* Services */,
+				CA3B7F6C150F658566312E60 /* ViewModels */,
+				E348FEAA12CB0806638F89E8 /* Views */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		69A4D732D996A25E93BB1E2E /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9CA51F58731B4EEFDFB62E3A /* Assets.xcassets */,
+				E2D68D506282685A53264CB3 /* Models */,
+				4FE67C567DDFB4F6270616DE /* Styles */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A4FBCA02C12BDF47EDF8FD39 = {
+			isa = PBXGroup;
+			children = (
+				69A4D732D996A25E93BB1E2E /* Resources */,
+				572D5A8C3C506BE38D9552F1 /* Sources */,
+				B5F26FFD930E1A5BCD18878F /* Tests */,
+				C82CDF1762F09AB875F22D9B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B5F26FFD930E1A5BCD18878F /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				055DF83509349D0FF64587F7 /* HandwritingStudioTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		BF961B57B135533B06CD61E6 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				DFD2A303AD342996ABB4E696 /* NativeHandwritingGenerator.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		C82CDF1762F09AB875F22D9B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D81DCDF6DA1786B69568ECC8 /* HandwritingStudio.app */,
+				1797F275797BBA10DEC656E8 /* HandwritingStudioTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		CA3B7F6C150F658566312E60 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				6412DAB3292FB83547B5F450 /* HandwritingViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		E2D68D506282685A53264CB3 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				64D38438CB6FD5AB82A94FB7 /* HandwritingStep.mlpackage */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E348FEAA12CB0806638F89E8 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A99255518F1376D2A6592686 /* ContentView.swift */,
+				65FBA6236A705CB7FAC52561 /* HandwritingCanvas.swift */,
+				F43E3DD5E3DA4AEE72547472 /* HandwritingStylePicker.swift */,
+				F5D5C2FDABB48400635D5BC3 /* SettingsView.swift */,
+				4A6A0512DC1A7D48DD42DF85 /* ShareSheet.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		F6F23BB7F4AF8B2D5636FA69 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				9051331C8D500EB3D36634E1 /* HandwritingModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A24F7515FCA1A8B9325DE418 /* HandwritingStudioTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B3F9BF0450BF4084CC58BB53 /* Build configuration list for PBXNativeTarget "HandwritingStudioTests" */;
+			buildPhases = (
+				8DFDD2175ADADA81485703C1 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B081108969276BFEECB0E527 /* PBXTargetDependency */,
+			);
+			name = HandwritingStudioTests;
+			packageProductDependencies = (
+			);
+			productName = HandwritingStudioTests;
+			productReference = 1797F275797BBA10DEC656E8 /* HandwritingStudioTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		E0347E180E7947391A122ECA /* HandwritingStudio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 95EACBB881EFD03081347DA5 /* Build configuration list for PBXNativeTarget "HandwritingStudio" */;
+			buildPhases = (
+				B1AB51F8AF40503DFBC10B85 /* Sources */,
+				194A2F1309A61BBF5667D8E1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = HandwritingStudio;
+			packageProductDependencies = (
+			);
+			productName = HandwritingStudio;
+			productReference = D81DCDF6DA1786B69568ECC8 /* HandwritingStudio.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		862C1AD7B901CAA5C8F37489 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					A24F7515FCA1A8B9325DE418 = {
+						ProvisioningStyle = Automatic;
+					};
+					E0347E180E7947391A122ECA = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = E3CAB5319FDADE580B58F497 /* Build configuration list for PBXProject "HandwritingStudio" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = A4FBCA02C12BDF47EDF8FD39;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C82CDF1762F09AB875F22D9B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E0347E180E7947391A122ECA /* HandwritingStudio */,
+				A24F7515FCA1A8B9325DE418 /* HandwritingStudioTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		194A2F1309A61BBF5667D8E1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A7416FF1BDB4C4109C7F3D45 /* Assets.xcassets in Resources */,
+				867F687F62BC39411082EA84 /* style-0-chars.npy in Resources */,
+				F6040BE117D7CA4E9E5C40AD /* style-0-strokes.npy in Resources */,
+				A4EAAA357F723A1C332D7052 /* style-1-chars.npy in Resources */,
+				963D550D50D6FFB96376B2B6 /* style-1-strokes.npy in Resources */,
+				EFD21DCD3E381814E44BAB84 /* style-10-chars.npy in Resources */,
+				53F179D2F7EE8DB971426324 /* style-10-strokes.npy in Resources */,
+				8071013728484314CBC60A62 /* style-11-chars.npy in Resources */,
+				D937D8EE93A3D673A3A0FF1E /* style-11-strokes.npy in Resources */,
+				EC122EA173451FA35B2D55C8 /* style-12-chars.npy in Resources */,
+				2FD98EECC3D3F98A5E57828A /* style-12-strokes.npy in Resources */,
+				E8C99706A324155DC42146E8 /* style-2-chars.npy in Resources */,
+				5E4081E774BAE8F976DCFAB2 /* style-2-strokes.npy in Resources */,
+				FE22155C159FC7F1747220BC /* style-3-chars.npy in Resources */,
+				9E7F2D59EC74E1C2E5F32A5E /* style-3-strokes.npy in Resources */,
+				F48B9266EE3C1681367FB527 /* style-4-chars.npy in Resources */,
+				988D140E7C366474F8830087 /* style-4-strokes.npy in Resources */,
+				D1C296CA3C06744B2FE5CB94 /* style-5-chars.npy in Resources */,
+				4D31B92F39C2D5A3F456B5E2 /* style-5-strokes.npy in Resources */,
+				CF16090C0D71BC67EB802F54 /* style-6-chars.npy in Resources */,
+				D4E6B18AB95EA90B14EE01F7 /* style-6-strokes.npy in Resources */,
+				4426B94A7643AE0EB3EF0C51 /* style-7-chars.npy in Resources */,
+				55F5C5068C67A6ABF87FA109 /* style-7-strokes.npy in Resources */,
+				4E6E5CBE3088A3A46B2B416D /* style-8-chars.npy in Resources */,
+				2B07AF312F8C5DD911C2E39E /* style-8-strokes.npy in Resources */,
+				E42864E4ED5DB8879EF91023 /* style-9-chars.npy in Resources */,
+				438141CD64F9D512B7910270 /* style-9-strokes.npy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		8DFDD2175ADADA81485703C1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0416ECC91577DB4B3A117BF7 /* HandwritingStudioTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B1AB51F8AF40503DFBC10B85 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2383629788C130DE158F0210 /* ContentView.swift in Sources */,
+				AF58DD94BC3059118BD91384 /* HandwritingCanvas.swift in Sources */,
+				3890C68EE6A92D0E6B7B6A22 /* HandwritingModels.swift in Sources */,
+				3F86851F63F06D41EFE6FC42 /* HandwritingStep.mlpackage in Sources */,
+				C3C7F5D4D4437891A15BBAFC /* HandwritingStudioApp.swift in Sources */,
+				58F94CE90386C943B867B4D4 /* HandwritingStylePicker.swift in Sources */,
+				C098843B90EB33E8A1F70087 /* HandwritingViewModel.swift in Sources */,
+				88069A4673A2083AC828530D /* NativeHandwritingGenerator.swift in Sources */,
+				86C6CEBC4C20772E307E47B8 /* SettingsView.swift in Sources */,
+				2639DAC9B62299DF9104A19D /* ShareSheet.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B081108969276BFEECB0E527 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E0347E180E7947391A122ECA /* HandwritingStudio */;
+			targetProxy = D9E5A1D8923441C91D192318 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		4AB9992990D6BA8486B2057A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cdeckert.HandwritingStudioTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HandwritingStudio.app/HandwritingStudio";
+			};
+			name = Debug;
+		};
+		912630F03DA0FE2BE66DBAB8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cdeckert.HandwritingStudio;
+				PRODUCT_NAME = HandwritingStudio;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		A522DC72D0964944E643EEED /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BC516B62EA4AA8487153EECC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E021A41B3F2483A9AA1B3892 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cdeckert.HandwritingStudioTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/HandwritingStudio.app/HandwritingStudio";
+			};
+			name = Release;
+		};
+		FB0EC7F345ECC021CE124E74 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cdeckert.HandwritingStudio;
+				PRODUCT_NAME = HandwritingStudio;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		95EACBB881EFD03081347DA5 /* Build configuration list for PBXNativeTarget "HandwritingStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FB0EC7F345ECC021CE124E74 /* Debug */,
+				912630F03DA0FE2BE66DBAB8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B3F9BF0450BF4084CC58BB53 /* Build configuration list for PBXNativeTarget "HandwritingStudioTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4AB9992990D6BA8486B2057A /* Debug */,
+				E021A41B3F2483A9AA1B3892 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E3CAB5319FDADE580B58F497 /* Build configuration list for PBXProject "HandwritingStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC516B62EA4AA8487153EECC /* Debug */,
+				A522DC72D0964944E643EEED /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 862C1AD7B901CAA5C8F37489 /* Project object */;
+}

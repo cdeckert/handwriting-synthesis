@@ -5,3 +5,9 @@ __pycache__/
 .git
 .gitignore
 .env
+.pytest_cache
+.ruff_cache
+.venv
+web_app/node_modules
+web_app/dist
+tests

@@ -1,87 +1,124 @@
-![](img/banner.svg)
+![Handwriting Synthesis](img/banner.svg)
+
 # Handwriting Synthesis
-Implementation of the handwriting synthesis experiments in the paper <a href="https://arxiv.org/abs/1308.0850">Generating Sequences with Recurrent Neural Networks</a> by Alex Graves.  The implementation closely follows the original paper, with a few slight deviations, and the generated samples are of similar quality to those presented in the paper.
 
-Web demo is available <a href="https://seanvasquez.com/handwriting-generation/">here</a>.
+Generate convincing handwriting as SVG from plain text. This project implements the synthesis model from Alex Graves' paper [Generating Sequences with Recurrent Neural Networks](https://arxiv.org/abs/1308.0850) and includes a pretrained checkpoint, 13 writing styles, a Python API, and a responsive web app.
 
-## Usage
-```python
-lines = [
-    "Now this is a story all about how",
-    "My life got flipped turned upside down",
-    "And I'd like to take a minute, just sit right there",
-    "I'll tell you how I became the prince of a town called Bel-Air",
-]
-biases = [.75 for i in lines]
-styles = [9 for i in lines]
-stroke_colors = ['red', 'green', 'black', 'blue']
-stroke_widths = [1, 2, 1, 2]
+> The neural network intentionally runs through TensorFlow's v1 compatibility layer so the original pretrained checkpoint remains usable. The application and tooling around it use current Python, Flask, React, TypeScript, and Vite conventions.
 
-hand = Hand()
-hand.write(
-    filename='img/usage_demo.svg',
-    lines=lines,
-    biases=biases,
-    styles=styles,
-    stroke_colors=stroke_colors,
-    stroke_widths=stroke_widths
-)
-```
-![](img/usage_demo.svg)
+## Quick start with Docker
 
-Currently, the `Hand` class must be imported from `demo.py`.  If someone would like to package this project to make it more usable, please [contribute](#contribute).
-
-### Web UI
-
-A lightweight Flask UI is available to generate SVG files directly from a browser. Install the dependencies and launch the
-development server:
-
-```
-pip install -r requirements.txt
-python web_app.py
-```
-
-Open <http://localhost:5000> and enter the text (multi-line is supported) you would like to render. Submitting the form downloads the generated SVG file.
-
-Use `python web_app.py --help` to see options for changing the host/port or enabling debug mode when you need Flask's auto
-reloader.
-
-A pretrained model is included, but if you'd like to train your own, read <a href='https://github.com/sjvasquez/handwriting-synthesis/tree/master/data/raw'>these instructions</a>.
-
-### Docker
-
-You can also run the web UI in a container:
+Docker builds the React app and serves it with the Python API:
 
 ```bash
 docker build -t handwriting-synthesis .
 docker run --rm -p 5000:5000 handwriting-synthesis
 ```
 
-Open <http://localhost:5000> after the container starts to use the interface.
+Open <http://localhost:5000>. The model loads on the first preview or download request, so that first request takes longer than subsequent ones.
 
-## Demonstrations
-Below are a few hundred samples from the model, including some samples demonstrating the effect of priming and biasing the model.  Loosely speaking, biasing controls the neatness of the samples and priming controls the style of the samples. The code for these demonstrations can be found in `demo.py`.
+## Local development
 
-### Demo #1:
-The following samples were generated with a fixed style and fixed bias.
+Requirements:
 
-**Smash Mouth – All Star (<a href="https://www.azlyrics.com/lyrics/smashmouth/allstar.html">lyrics</a>)**
-![](img/all_star.svg)
+- Python 3.13
+- Node.js 22.13 or newer
+- npm
 
-### Demo #2
-The following samples were generated with varying style and fixed bias.  Each verse is generated in a different style.
+Create a Python environment and install the backend:
 
-**Vanessa Carlton – A Thousand Miles (<a href="https://www.azlyrics.com/lyrics/vanessacarlton/athousandmiles.html">lyrics</a>)**
-![](img/downtown.svg)
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+python web_app.py --host 127.0.0.1 --port 5000
+```
 
-### Demo #3
-The following samples were generated with a fixed style and varying bias.  Each verse has a lower bias than the previous, with the last verse being unbiased.
+In a second terminal, start the front end:
 
-**Leonard Cohen – Hallelujah (<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">lyrics</a>)**
-![](img/give_up.svg)
+```bash
+cd web_app
+npm ci
+npm run dev
+```
 
-## Contribute
-This project was intended to serve as a reference implementation for a research paper, but since the results are of decent quality, it may be worthwile to make the project more broadly usable.  I plan to continue focusing on the machine learning side of things.  That said, I'd welcome contributors who can:
+Open <http://localhost:5173>. Vite proxies `/api` requests to Flask on port 5000.
 
-  - Package this, and otherwise make it look more like a usable software project and less like research code.
-  - Add support for more sophisticated drawing, animations, or anything else in this direction.  Currently, the project only creates some simple svg files.
+Before opening a pull request, run:
+
+```bash
+pytest
+cd web_app && npm run check && npm audit --audit-level=high
+```
+
+## Python API
+
+```python
+from demo import Hand
+
+hand = Hand()
+hand.write(
+    filename="handwriting.svg",
+    lines=["Now this is a story all about how", "My life got flipped upside down"],
+    biases=[0.75, 0.75],
+    styles=[9, 9],
+    stroke_colors=["#172554", "#172554"],
+    stroke_widths=[2, 2],
+    alignment="left",
+)
+```
+
+Each line can contain up to 75 supported characters. `biases` control neatness, while `styles` select one of the included samples numbered 0 through 12.
+
+## HTTP API
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/api/health` | `GET` | Readiness information without loading the model |
+| `/api/styles` | `GET` | Available handwriting styles |
+| `/api/preview` | `POST` | Generate SVG inside a JSON response |
+| `/api/generate` | `POST` | Download generated SVG |
+| `/api/render` | `POST` | Generate platform-neutral vector paths for native clients |
+
+Generation requests accept JSON in this shape:
+
+```json
+{
+  "text": "Hello world",
+  "style": 4,
+  "alignment": "center"
+}
+```
+
+## Native iPhone app
+
+[`ios/HandwritingStudio`](ios/HandwritingStudio) contains a fully offline native SwiftUI app for iOS 17 and newer. Core ML runs the converted recurrent/attention network, Swift performs the GMM sampling and stroke layout, SwiftUI Canvas/Core Graphics draws the result, and the native share sheet exports SVG. No server, web view, or JavaScript UI is required.
+
+Open the Xcode project and run it on a simulator or iPhone:
+
+```bash
+open ios/HandwritingStudio/HandwritingStudio.xcodeproj
+```
+
+The app bundles the Core ML model and all 13 style primers. Its native style selector gives each style a descriptive name and renders a real preview from its primer data. While generating, the interface shows percentage progress based on completed Core ML inference steps. See [`docs/coreml-conversion.md`](docs/coreml-conversion.md) for conversion and parity details.
+
+## Production notes
+
+- The production container runs as an unprivileged user.
+- A single worker processes generation requests because the restored TensorFlow session is stateful and memory-heavy.
+- Input size, line count, line length, style, and alignment are validated before model execution.
+- The `/api/health` endpoint is suitable for container health checks.
+
+## Training data
+
+The pretrained model is included. To train a new model, follow the instructions in [`data/raw/readme.md`](data/raw/readme.md) and place the IAM dataset in the ignored `data/raw` directories.
+
+## Examples
+
+![Generated handwriting sample](img/usage_demo.svg)
+
+Additional generated samples are available in [`img/`](img/).
+
+## Acknowledgements
+
+This project began as Sean Vasquez's reference implementation of Graves' handwriting-synthesis experiments. Its model structure and bundled checkpoint remain compatible with that work.
