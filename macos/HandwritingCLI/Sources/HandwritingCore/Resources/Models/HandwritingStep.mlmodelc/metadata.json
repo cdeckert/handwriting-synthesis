@@ -1,0 +1,272 @@
+[
+  {
+    "shortDescription" : "One recurrent attention\/GMM step for offline handwriting synthesis.",
+    "metadataOutputVersion" : "3.0",
+    "outputSchema" : [
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 121)",
+        "shortDescription" : "Raw 20-component GMM parameters.",
+        "shape" : "[1, 121]",
+        "name" : "gmm_params",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "next_h1",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "next_c1",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "next_h2",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "next_c2",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "next_h3",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "next_c3",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 10)",
+        "shortDescription" : "",
+        "shape" : "[1, 10]",
+        "name" : "next_kappa",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 73)",
+        "shortDescription" : "",
+        "shape" : "[1, 73]",
+        "name" : "next_window",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 120)",
+        "shortDescription" : "",
+        "shape" : "[1, 120]",
+        "name" : "next_phi",
+        "type" : "MultiArray"
+      }
+    ],
+    "version" : "1.0",
+    "modelParameters" : [
+
+    ],
+    "author" : "Handwriting Synthesis",
+    "specificationVersion" : 8,
+    "storagePrecision" : "Float32",
+    "mlProgramOperationTypeHistogram" : {
+      "Ios17.less" : 1,
+      "OneHot" : 1,
+      "Ios17.linear" : 5,
+      "Ios17.mul" : 15,
+      "Ios17.sub" : 1,
+      "Ios16.softplus" : 1,
+      "Ios16.sigmoid" : 9,
+      "Ios17.concat" : 7,
+      "Ios17.add" : 7,
+      "Ios17.minimum" : 1,
+      "Ios17.realDiv" : 1,
+      "Ios17.expandDims" : 6,
+      "Ios17.tanh" : 6,
+      "Ios17.maximum" : 1,
+      "Ios16.reduceSum" : 2,
+      "Split" : 4,
+      "Ios17.cast" : 1,
+      "Ios17.exp" : 1
+    },
+    "computePrecision" : "Mixed (Float32, Int32)",
+    "stateSchema" : [
+
+    ],
+    "isUpdatable" : "0",
+    "availability" : {
+      "macOS" : "14.0",
+      "tvOS" : "17.0",
+      "visionOS" : "1.0",
+      "watchOS" : "10.0",
+      "iOS" : "17.0",
+      "macCatalyst" : "17.0"
+    },
+    "modelType" : {
+      "name" : "MLModelType_mlProgram"
+    },
+    "inputSchema" : [
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 3)",
+        "shortDescription" : "Previous sampled x\/y offset and pen state.",
+        "shape" : "[1, 3]",
+        "name" : "stroke",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Int32",
+        "formattedType" : "MultiArray (Int32 1 × 120)",
+        "shortDescription" : "Encoded text padded to 120 characters.",
+        "shape" : "[1, 120]",
+        "name" : "chars",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Int32",
+        "formattedType" : "MultiArray (Int32 1)",
+        "shortDescription" : "Encoded text length including terminator.",
+        "shape" : "[1]",
+        "name" : "chars_len",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "h1",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "c1",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "h2",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "c2",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "h3",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 400)",
+        "shortDescription" : "",
+        "shape" : "[1, 400]",
+        "name" : "c3",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 10)",
+        "shortDescription" : "",
+        "shape" : "[1, 10]",
+        "name" : "kappa",
+        "type" : "MultiArray"
+      },
+      {
+        "hasShapeFlexibility" : "0",
+        "isOptional" : "0",
+        "dataType" : "Float32",
+        "formattedType" : "MultiArray (Float32 1 × 73)",
+        "shortDescription" : "",
+        "shape" : "[1, 73]",
+        "name" : "window",
+        "type" : "MultiArray"
+      }
+    ],
+    "userDefinedMetadata" : {
+      "com.github.apple.coremltools.conversion_date" : "2026-09-27",
+      "architecture" : "3x400 LSTM with Graves attention",
+      "com.github.apple.coremltools.source" : "tensorflow==2.21.0",
+      "com.github.apple.coremltools.version" : "9.0",
+      "source_checkpoint" : "checkpoints\/model-17900"
+    },
+    "generatedClassName" : "HandwritingStep",
+    "method" : "predict"
+  }
+]

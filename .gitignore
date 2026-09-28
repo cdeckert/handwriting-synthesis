@@ -16,3 +16,7 @@ __pycache__/
 htmlcov/
 web_app/node_modules/
 web_app/dist/
+.build/
+.swiftpm/
+macos/HandwritingCLI/output/
+macos/HandwritingCLI/tmp/

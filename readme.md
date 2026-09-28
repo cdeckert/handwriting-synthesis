@@ -102,6 +102,15 @@ open ios/HandwritingStudio/HandwritingStudio.xcodeproj
 
 The app bundles the Core ML model and all 13 style primers. Its native style selector gives each style a descriptive name and renders a real preview from its primer data. Users can choose common paper sizes (A5 through A3, Letter, and Legal) or screen canvases, switch orientation, and adjust the writing size. Text wraps automatically at word boundaries, and the SVG retains the selected print or pixel dimensions. While generating, the interface shows percentage progress based on completed Core ML inference steps. See [`docs/coreml-conversion.md`](docs/coreml-conversion.md) for conversion and parity details.
 
+## Native macOS command-line tool
+
+[`macos/HandwritingCLI`](macos/HandwritingCLI) provides a local Apple-silicon
+command-line interface backed by the same Core ML model. It accepts text, UTF-8
+files, or stdin; paginates long documents automatically; and exports a
+multi-page PDF or numbered PNG/SVG pages. Successful commands return JSON on
+stdout, which makes the tool suitable as the local generation layer behind an
+API.
+
 ## Production notes
 
 - The production container runs as an unprivileged user.
