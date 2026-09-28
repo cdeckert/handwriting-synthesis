@@ -4,6 +4,14 @@ struct HandwritingStyle: Identifiable, Equatable {
     let id: Int
     let label: String
     let detail: String
+    let isCustom: Bool
+
+    init(id: Int, label: String, detail: String, isCustom: Bool = false) {
+        self.id = id
+        self.label = label
+        self.detail = detail
+        self.isCustom = isCustom
+    }
 
     static let bundled = [
         HandwritingStyle(id: 0, label: "Light Loops", detail: "Thin and relaxed"),

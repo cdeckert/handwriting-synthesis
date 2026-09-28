@@ -1,4 +1,4 @@
-# Handwriting Studio for iPhone
+# Handwriting Studio for iPhone and iPad
 
 This is the native iOS client for the handwriting synthesis model.
 
@@ -11,6 +11,8 @@ This is the native iOS client for the handwriting synthesis model.
 - Named writing styles with previews drawn from the bundled style primers
 - Selectable A5, A4, A3, Letter, Legal, phone, tablet, desktop HD, and square canvases
 - Portrait/landscape orientation, adjustable writing size, and automatic word wrapping
+- German umlauts, sharp s, and French accented-letter vector marks
+- Personal handwriting primers captured locally with Apple Pencil on iPad
 - UIKit's native share sheet for SVG export
 - XCTest for client model and configuration tests
 
@@ -18,11 +20,11 @@ The app does not embed the React site, use a web view, or contact the Python ser
 
 ## Run in the simulator
 
-Open `HandwritingStudio.xcodeproj`, select an iPhone simulator, and run the `HandwritingStudio` scheme. No service or network connection is required.
+Open `HandwritingStudio.xcodeproj`, select an iPhone or iPad simulator, and run the `HandwritingStudio` scheme. No service or network connection is required.
 
-## Run on an iPhone
+## Run on an iPhone or iPad
 
-Select your development team in Xcode and run the app on an iPhone with iOS 17 or newer. The model and style data are part of the application bundle, so generation also works offline.
+Select your development team in Xcode and run the app on a device with iOS 17 or newer. On iPad, use **Add my handwriting** to write the prompted sample with Apple Pencil. The normalized sample is stored only in the app's Application Support directory and appears as a personal style in the selector. The model and style data are local, so generation and personal styles work offline.
 
 ## Regenerate the project
 

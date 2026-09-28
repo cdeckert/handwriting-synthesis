@@ -48,6 +48,25 @@ final class HandwritingStudioTests: XCTestCase {
         XCTAssertEqual(lines, ["abcd", "efgh", "ijk"])
     }
 
+    func testGermanAndFrenchCharactersPrepareForTheFixedModelAlphabet() throws {
+        let prepared = try HandwritingOrthography.prepare("Füße à Noël, cœur")
+
+        XCTAssertEqual(prepared.modelText, "Fuse a Noel, coeur")
+        XCTAssertEqual(
+            prepared.marks.map(\.diacritic),
+            [.diaeresis, .sharpS, .grave, .diaeresis]
+        )
+        XCTAssertEqual(prepared.marks.map(\.characterIndex), [1, 2, 5, 9])
+    }
+
+    func testSupportedGermanAndFrenchCharacterInventory() throws {
+        XCTAssertNoThrow(
+            try HandwritingOrthography.prepare(
+                "ÄÖÜäöüß ÀÂÇÉÈÊËÎÏÔÙÛÜŸ àâçéèêëîïôùûüÿ ŒœÆæ"
+            )
+        )
+    }
+
     func testBundledCoreMLStepRuns() throws {
         let model = try HandwritingStep(configuration: MLModelConfiguration())
         let output = try model.prediction(
@@ -97,6 +116,24 @@ final class HandwritingStudioTests: XCTestCase {
         XCTAssertEqual(progress.values.first, 0)
         XCTAssertEqual(progress.values.last, 1)
         XCTAssertGreaterThan(progress.values.count, 2)
+    }
+
+    func testOfflineGeneratorRendersUnicodeMarksAsVectorPaths() throws {
+        let generator = try NativeHandwritingGenerator()
+        let document = try generator.render(
+            request: GenerationRequest(
+                text: "Füße café",
+                style: 0,
+                alignment: .left,
+                pageFormat: .a4,
+                pageOrientation: .portrait,
+                fontSize: 36
+            ),
+            bias: 0.75
+        )
+
+        XCTAssertGreaterThanOrEqual(document.paths.count, 4)
+        XCTAssertTrue(document.paths.dropFirst().allSatisfy { !$0.points.isEmpty })
     }
 }
 

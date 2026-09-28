@@ -90,11 +90,11 @@ Generation requests accept JSON in this shape:
 }
 ```
 
-## Native iPhone app
+## Native iPhone and iPad app
 
-[`ios/HandwritingStudio`](ios/HandwritingStudio) contains a fully offline native SwiftUI app for iOS 17 and newer. Core ML runs the converted recurrent/attention network, Swift performs the GMM sampling and stroke layout, SwiftUI Canvas/Core Graphics draws the result, and the native share sheet exports SVG. No server, web view, or JavaScript UI is required.
+[`ios/HandwritingStudio`](ios/HandwritingStudio) contains a fully offline native SwiftUI app for iOS 17 and newer. Core ML runs the converted recurrent/attention network, Swift performs the GMM sampling and stroke layout, SwiftUI Canvas/Core Graphics draws the result, and the native share sheet exports SVG. The app supports German and French diacritics, and the iPad version can capture a personal style with Apple Pencil. No server, web view, or JavaScript UI is required.
 
-Open the Xcode project and run it on a simulator or iPhone:
+Open the Xcode project and run it on a simulator, iPhone, or iPad:
 
 ```bash
 open ios/HandwritingStudio/HandwritingStudio.xcodeproj

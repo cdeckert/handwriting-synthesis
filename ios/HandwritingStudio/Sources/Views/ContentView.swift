@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = HandwritingViewModel()
     @State private var isShowingSettings = false
+    @State private var isShowingPersonalStyleCapture = false
     @State private var sharedFile: SharedFile?
     @FocusState private var isTextEditorFocused: Bool
 
@@ -46,6 +47,15 @@ struct ContentView: View {
         .sheet(isPresented: $isShowingSettings) {
             SettingsView(viewModel: viewModel)
         }
+        .sheet(isPresented: $isShowingPersonalStyleCapture) {
+            PersonalHandwritingCaptureView { name, characters, strokes in
+                try viewModel.savePersonalStyle(
+                    name: name,
+                    characters: characters,
+                    strokes: strokes
+                )
+            }
+        }
         .sheet(item: $sharedFile) { file in
             ShareSheet(items: [file.url])
         }
@@ -84,7 +94,18 @@ struct ContentView: View {
                     styles: viewModel.styles,
                     selection: $viewModel.selectedStyleID
                 )
+
+                if UIDevice.current.userInterfaceIdiom == .pad {
+                    Button("Add my handwriting", systemImage: "applepencil") {
+                        isShowingPersonalStyleCapture = true
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
+
+            Text("Supports German umlauts, ß, and French accented letters.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             Picker("Alignment", selection: $viewModel.alignment) {
                 ForEach(TextAlignment.allCases) { alignment in

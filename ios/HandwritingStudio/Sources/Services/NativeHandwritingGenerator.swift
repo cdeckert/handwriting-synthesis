@@ -9,6 +9,8 @@ enum NativeHandwritingError: LocalizedError {
     case unsupportedCharacter(Character)
     case missingStyle(Int)
     case invalidStyleData(Int)
+    case customStyleTooShort
+    case customStyleStorage
     case invalidModelOutput
 
     var errorDescription: String? {
@@ -27,6 +29,10 @@ enum NativeHandwritingError: LocalizedError {
             "The bundled data for style \(style + 1) is missing."
         case let .invalidStyleData(style):
             "The bundled data for style \(style + 1) is unreadable."
+        case .customStyleTooShort:
+            "Write the complete sample sentence before saving your style."
+        case .customStyleStorage:
+            "Your personal handwriting style could not be saved."
         case .invalidModelOutput:
             "Core ML returned invalid handwriting data."
         }
@@ -92,9 +98,10 @@ final class NativeHandwritingGenerator {
         let lines = try validatedLines(request.text, pageLayout: pageLayout)
         let styleID = request.style ?? 9
         let style = try styleStore.load(id: styleID)
-        let totalSteps = lines.reduce(0) { total, line in
-            guard !line.isEmpty else { return total }
-            return total + style.strokes.count + max(line.count * 40, 40)
+        let preparedLines = try lines.map(HandwritingOrthography.prepare)
+        let totalSteps = preparedLines.reduce(0) { total, line in
+            guard !line.modelText.isEmpty else { return total }
+            return total + style.strokes.count + max(line.modelText.count * 40, 40)
         }
         var progressReporter = GenerationProgressReporter(
             total: max(totalSteps, 1),
@@ -102,12 +109,12 @@ final class NativeHandwritingGenerator {
         )
         progressReporter.start()
         var random = GaussianRandomSource()
-        var sampledLines = [[StrokeOffset]?]()
+        var sampledLines = [SampledHandwritingLine?]()
         sampledLines.reserveCapacity(lines.count)
 
-        for line in lines {
+        for line in preparedLines {
             try Task.checkCancellation()
-            if line.isEmpty {
+            if line.modelText.isEmpty {
                 sampledLines.append(nil)
             } else {
                 sampledLines.append(
@@ -147,7 +154,7 @@ final class NativeHandwritingGenerator {
             throw NativeHandwritingError.textTooLong
         }
         for character in normalized where character != "\n" {
-            if Self.characterNumbers[character] == nil {
+            if !HandwritingOrthography.supports(character) {
                 throw NativeHandwritingError.unsupportedCharacter(character)
             }
         }
@@ -166,13 +173,14 @@ final class NativeHandwritingGenerator {
     }
 
     private func sample(
-        line: String,
+        line: PreparedHandwritingLine,
         style: HandwritingStyleSample,
         bias: Float,
         random: inout GaussianRandomSource,
         progress: inout GenerationProgressReporter
-    ) throws -> [StrokeOffset] {
-        let encoded = try encode(style.characters + " " + line)
+    ) throws -> SampledHandwritingLine {
+        let primerLength = style.characters.count + 1
+        let encoded = try encode(style.characters + " " + line.modelText)
         var state = RecurrentState()
         var lastParameters: [Float]?
 
@@ -193,10 +201,10 @@ final class NativeHandwritingGenerator {
             bias: bias,
             random: &random
         )
-        var result = [StrokeOffset]()
-        result.reserveCapacity(max(line.count * 30, 80))
+        var result = [AttributedStrokeOffset]()
+        result.reserveCapacity(max(line.modelText.count * 30, 80))
 
-        let maximumSteps = max(line.count * 40, 40)
+        let maximumSteps = max(line.modelText.count * 40, 40)
         for _ in 0 ..< maximumSteps {
             try Task.checkCancellation()
             let output = try step(
@@ -210,13 +218,18 @@ final class NativeHandwritingGenerator {
                 bias: bias,
                 random: &random
             )
-            result.append(sampled)
             previousStroke = sampled
             progress.advance()
 
             let characterIndex = state.phi.indices.max {
                 state.phi[$0] < state.phi[$1]
             } ?? 0
+            result.append(
+                AttributedStrokeOffset(
+                    offset: sampled,
+                    characterIndex: max(characterIndex - primerLength, 0)
+                )
+            )
             let finalCharacter = characterIndex >= encoded.length - 1
             let pastFinalCharacter = characterIndex >= encoded.length
             if pastFinalCharacter || (finalCharacter && sampled.penUp == 1) {
@@ -227,7 +240,11 @@ final class NativeHandwritingGenerator {
         guard !result.isEmpty else {
             throw NativeHandwritingError.invalidModelOutput
         }
-        return result
+        return SampledHandwritingLine(
+            strokes: result,
+            marks: line.marks,
+            modelCharacterCount: line.modelText.count
+        )
     }
 
     private func encode(_ text: String) throws -> EncodedText {
@@ -370,10 +387,123 @@ private struct RecurrentState {
     }
 }
 
-struct StrokeOffset {
+struct StrokeOffset: Codable {
     let x: Float
     let y: Float
     let penUp: Float
+}
+
+enum HandwritingDiacritic: Equatable {
+    case acute
+    case grave
+    case circumflex
+    case diaeresis
+    case cedilla
+    case tilde
+    case sharpS
+}
+
+struct HandwritingMark: Equatable {
+    let characterIndex: Int
+    let diacritic: HandwritingDiacritic
+}
+
+struct PreparedHandwritingLine: Equatable {
+    let modelText: String
+    let marks: [HandwritingMark]
+}
+
+enum HandwritingOrthography {
+    private static let directlySupported = Set(
+        " !\"#'(),-.0123456789:;?ABCDEFGHIJKLMNOPRSTUVWYabcdefghijklmnopqrstuvwxyz"
+    )
+
+    static func supports(_ character: Character) -> Bool {
+        expansion(for: character) != nil
+    }
+
+    static func prepare(_ text: String) throws -> PreparedHandwritingLine {
+        var modelText = ""
+        var marks = [HandwritingMark]()
+
+        for character in text {
+            guard let expansion = expansion(for: character) else {
+                throw NativeHandwritingError.unsupportedCharacter(character)
+            }
+            let targetIndex = modelText.count
+            modelText.append(contentsOf: expansion.text)
+            marks.append(contentsOf: expansion.diacritics.map {
+                HandwritingMark(characterIndex: targetIndex, diacritic: $0)
+            })
+        }
+        return PreparedHandwritingLine(modelText: modelText, marks: marks)
+    }
+
+    private static func expansion(
+        for character: Character
+    ) -> (text: String, diacritics: [HandwritingDiacritic])? {
+        if directlySupported.contains(character) {
+            return (String(character), [])
+        }
+
+        switch character {
+        case "ß", "ẞ": return ("s", [.sharpS])
+        case "æ": return ("ae", [])
+        case "Æ": return ("AE", [])
+        case "œ": return ("oe", [])
+        case "Œ": return ("OE", [])
+        case "’", "‘": return ("'", [])
+        case "«", "»": return ("\"", [])
+        case "–", "—": return ("-", [])
+        case "\u{00A0}": return (" ", [])
+        default: break
+        }
+
+        let scalars = Array(
+            String(character).decomposedStringWithCanonicalMapping.unicodeScalars
+        )
+        guard
+            let first = scalars.first,
+            first.isASCII,
+            let base = Character(String(first)).asciiModelCharacter,
+            directlySupported.contains(base)
+        else { return nil }
+
+        var diacritics = [HandwritingDiacritic]()
+        for scalar in scalars.dropFirst() {
+            switch scalar.value {
+            case 0x0300: diacritics.append(.grave)
+            case 0x0301: diacritics.append(.acute)
+            case 0x0302: diacritics.append(.circumflex)
+            case 0x0303: diacritics.append(.tilde)
+            case 0x0308: diacritics.append(.diaeresis)
+            case 0x0327: diacritics.append(.cedilla)
+            default: return nil
+            }
+        }
+        guard !diacritics.isEmpty else { return nil }
+        return (String(base), diacritics)
+    }
+}
+
+private extension Character {
+    var asciiModelCharacter: Character? {
+        guard unicodeScalars.count == 1, unicodeScalars.first?.isASCII == true else {
+            return nil
+        }
+        return self
+    }
+}
+
+private struct AttributedStrokeOffset {
+    let offset: StrokeOffset
+    let characterIndex: Int
+}
+
+private struct SampledHandwritingLine {
+    let strokes: [AttributedStrokeOffset]
+    let marks: [HandwritingMark]
+    let modelCharacterCount: Int
 }
 
 private struct GaussianRandomSource {
@@ -450,6 +580,10 @@ final class HandwritingStyleStore {
     func load(id: Int) throws -> HandwritingStyleSample {
         if let cached = cache[id] {
             return cached
+        }
+        if id >= 1_000, let custom = try CustomHandwritingStyleRepository.sample(id: id) {
+            cache[id] = custom
+            return custom
         }
         guard (0 ... 12).contains(id) else {
             throw NativeHandwritingError.missingStyle(id)
@@ -668,22 +802,27 @@ private extension NativeHandwritingGenerator {
     }
 
     static func layout(
-        sampledLines: [[StrokeOffset]?],
+        sampledLines: [SampledHandwritingLine?],
         alignment: TextAlignment,
         pageLayout: HandwritingPageLayout,
         unit: CanvasUnit
     ) -> RenderDocument {
         var paths = [RenderedPath]()
 
-        for (lineIndex, offsets) in sampledLines.enumerated() {
-            guard let offsets, !offsets.isEmpty else { continue }
+        for (lineIndex, sampledLine) in sampledLines.enumerated() {
+            guard let sampledLine, !sampledLine.strokes.isEmpty else { continue }
 
             var x = 0.0
             var y = 0.0
-            var coordinates = offsets.map { offset -> Coordinate in
-                x += Double(offset.x)
-                y += Double(offset.y)
-                return Coordinate(x: x, y: y, penUp: offset.penUp)
+            let characterIndices = sampledLine.strokes.map(\.characterIndex)
+            var coordinates = sampledLine.strokes.map { attributed -> Coordinate in
+                x += Double(attributed.offset.x)
+                y += Double(attributed.offset.y)
+                return Coordinate(
+                    x: x,
+                    y: y,
+                    penUp: attributed.offset.penUp
+                )
             }
             coordinates = denoise(coordinates)
             coordinates = align(coordinates)
@@ -732,16 +871,53 @@ private extension NativeHandwritingGenerator {
                     move: previousPenUp == 1
                 )
             }
+            let renderedLineWidth = max(
+                0.75,
+                (pageLayout.fontSize / 18) * (scale / desiredScale)
+            )
             paths.append(
                 RenderedPath(
                     strokeColor: "#111827",
-                    lineWidth: max(
-                        0.75,
-                        (pageLayout.fontSize / 18) * (scale / desiredScale)
-                    ),
+                    lineWidth: renderedLineWidth,
                     points: points
                 )
             )
+
+            for mark in sampledLine.marks {
+                let attributedCoordinates = coordinates.indices.compactMap { index in
+                    characterIndices[index] == mark.characterIndex
+                        ? coordinates[index]
+                        : nil
+                }
+                let characterWidth = max(
+                    lineWidth / Double(max(sampledLine.modelCharacterCount, 1)),
+                    pageLayout.fontSize * 0.32
+                )
+                let fallbackCenterX = horizontalOffset
+                    + (lineWidth * (Double(mark.characterIndex) + 0.5)
+                        / Double(max(sampledLine.modelCharacterCount, 1)))
+                let markBounds = MarkBounds(
+                    minimumX: attributedCoordinates.map(\.x).min()
+                        ?? (fallbackCenterX - characterWidth / 2),
+                    maximumX: attributedCoordinates.map(\.x).max()
+                        ?? (fallbackCenterX + characterWidth / 2),
+                    minimumY: attributedCoordinates.map(\.y).min()
+                        ?? verticalOffset,
+                    maximumY: attributedCoordinates.map(\.y).max()
+                        ?? (verticalOffset + lineDrawingHeight)
+                )
+                paths.append(
+                    RenderedPath(
+                        strokeColor: "#111827",
+                        lineWidth: renderedLineWidth,
+                        points: markPoints(
+                            mark.diacritic,
+                            bounds: markBounds,
+                            fontSize: pageLayout.fontSize
+                        )
+                    )
+                )
+            }
         }
 
         return RenderDocument(
@@ -751,6 +927,82 @@ private extension NativeHandwritingGenerator {
             paths: paths,
             unit: unit
         )
+    }
+
+    struct MarkBounds {
+        let minimumX: Double
+        let maximumX: Double
+        let minimumY: Double
+        let maximumY: Double
+
+        var width: Double { max(maximumX - minimumX, 4) }
+        var height: Double { max(maximumY - minimumY, 8) }
+        var centerX: Double { (minimumX + maximumX) / 2 }
+    }
+
+    static func markPoints(
+        _ mark: HandwritingDiacritic,
+        bounds: MarkBounds,
+        fontSize: Double
+    ) -> [RenderPoint] {
+        let width = min(max(bounds.width * 0.42, fontSize * 0.12), fontSize * 0.30)
+        let height = min(max(bounds.height * 0.22, fontSize * 0.10), fontSize * 0.24)
+        let top = bounds.minimumY - max(fontSize * 0.09, 2)
+        let bottom = bounds.maximumY + max(fontSize * 0.05, 1)
+        let center = bounds.centerX
+
+        func point(_ x: Double, _ y: Double, move: Bool) -> RenderPoint {
+            RenderPoint(x: x, y: y, move: move)
+        }
+
+        switch mark {
+        case .acute:
+            return [
+                point(center - width / 2, top, move: true),
+                point(center + width / 2, top - height, move: false),
+            ]
+        case .grave:
+            return [
+                point(center - width / 2, top - height, move: true),
+                point(center + width / 2, top, move: false),
+            ]
+        case .circumflex:
+            return [
+                point(center - width, top, move: true),
+                point(center, top - height, move: false),
+                point(center + width, top, move: false),
+            ]
+        case .diaeresis:
+            let dot = max(width * 0.18, 1.5)
+            return [
+                point(center - width / 2 - dot, top - height / 2, move: true),
+                point(center - width / 2 + dot, top - height / 2, move: false),
+                point(center + width / 2 - dot, top - height / 2, move: true),
+                point(center + width / 2 + dot, top - height / 2, move: false),
+            ]
+        case .cedilla:
+            return [
+                point(center + width * 0.15, bottom, move: true),
+                point(center - width * 0.10, bottom + height * 0.65, move: false),
+                point(center + width * 0.30, bottom + height, move: false),
+            ]
+        case .tilde:
+            return [
+                point(center - width, top - height * 0.25, move: true),
+                point(center - width * 0.35, top - height, move: false),
+                point(center + width * 0.35, top, move: false),
+                point(center + width, top - height * 0.75, move: false),
+            ]
+        case .sharpS:
+            let stemX = bounds.minimumX + bounds.width * 0.20
+            return [
+                point(stemX + width * 0.55, bounds.maximumY, move: true),
+                point(stemX, bounds.minimumY + bounds.height * 0.20, move: false),
+                point(stemX + width * 0.35, top - height * 0.35, move: false),
+                point(stemX + width, bounds.minimumY + bounds.height * 0.22, move: false),
+                point(stemX + width * 0.35, bounds.minimumY + bounds.height * 0.45, move: false),
+            ]
+        }
     }
 
     static func denoise(_ coordinates: [Coordinate]) -> [Coordinate] {

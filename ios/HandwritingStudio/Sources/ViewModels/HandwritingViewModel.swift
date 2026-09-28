@@ -6,6 +6,7 @@ final class HandwritingViewModel: ObservableObject {
 
     @Published var text = "Hello World!\nWelcome to Handwriting Studio"
     @Published var styles = HandwritingStyle.bundled
+        + CustomHandwritingStyleRepository.styles()
     @Published var selectedStyleID: Int? = 9
     @Published var alignment: TextAlignment = .center
     @Published var pageFormat: PageFormat = .a4
@@ -133,6 +134,23 @@ final class HandwritingViewModel: ObservableObject {
             errorMessage = error.localizedDescription
             return nil
         }
+    }
+
+    func savePersonalStyle(
+        name: String,
+        characters: String,
+        strokes: [StrokeOffset]
+    ) throws {
+        let style = try CustomHandwritingStyleRepository.save(
+            name: name,
+            characters: characters,
+            strokes: strokes
+        )
+        styles = HandwritingStyle.bundled
+            + CustomHandwritingStyleRepository.styles()
+        selectedStyleID = style.id
+        errorMessage = nil
+        schedulePreview(immediately: true)
     }
 
     var pageLayout: HandwritingPageLayout {

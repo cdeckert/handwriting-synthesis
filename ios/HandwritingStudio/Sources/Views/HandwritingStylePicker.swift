@@ -92,7 +92,7 @@ private struct HandwritingStyleSampleView: View {
     let styleID: Int
 
     private var paths: [[CGPoint]] {
-        HandwritingStylePreviewRepository.paths[styleID] ?? []
+        HandwritingStylePreviewRepository.paths(for: styleID)
     }
 
     var body: some View {
@@ -135,32 +135,28 @@ private struct HandwritingStyleSampleView: View {
 }
 
 private enum HandwritingStylePreviewRepository {
-    static let paths: [Int: [[CGPoint]]] = {
+    static func paths(for styleID: Int) -> [[CGPoint]] {
         let store = HandwritingStyleStore()
-        return Dictionary(
-            uniqueKeysWithValues: (0 ... 12).compactMap { id in
-                guard let sample = try? store.load(id: id) else { return nil }
-                var x = 0.0
-                var y = 0.0
-                var currentStroke = [CGPoint]()
-                var strokes = [[CGPoint]]()
+        guard let sample = try? store.load(id: styleID) else { return [] }
+        var x = 0.0
+        var y = 0.0
+        var currentStroke = [CGPoint]()
+        var strokes = [[CGPoint]]()
 
-                for offset in sample.strokes {
-                    x += Double(offset.x)
-                    y -= Double(offset.y)
-                    currentStroke.append(CGPoint(x: x, y: y))
-                    if offset.penUp == 1 {
-                        if currentStroke.count > 1 {
-                            strokes.append(currentStroke)
-                        }
-                        currentStroke = []
-                    }
-                }
+        for offset in sample.strokes {
+            x += Double(offset.x)
+            y -= Double(offset.y)
+            currentStroke.append(CGPoint(x: x, y: y))
+            if offset.penUp == 1 {
                 if currentStroke.count > 1 {
                     strokes.append(currentStroke)
                 }
-                return (id, strokes)
+                currentStroke = []
             }
-        )
-    }()
+        }
+        if currentStroke.count > 1 {
+            strokes.append(currentStroke)
+        }
+        return strokes
+    }
 }
