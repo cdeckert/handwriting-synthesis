@@ -37,6 +37,10 @@ def test_styles_are_discovered_in_numeric_order(client):
         ({"text": "hello", "style": "unknown"}, "Invalid style selected."),
         ({"text": "hello", "style": 99}, "Selected style is not available."),
         ({"text": "hello", "alignment": "right"}, "Invalid alignment selected."),
+        ({"text": "hello", "fontSize": 17}, "Font size must be a number between 18 and 72."),
+        ({"text": "hello", "fontSize": 73}, "Font size must be a number between 18 and 72."),
+        ({"text": "hello", "fontSize": "large"}, "Font size must be a number between 18 and 72."),
+        ({"text": "hello", "fontSize": True}, "Font size must be a number between 18 and 72."),
         ({"text": "x" * 76}, "the limit is 75"),
         ({"text": "\n".join(["x"] * 13)}, "no more than 12 lines"),
     ],
@@ -52,22 +56,22 @@ def test_generate_returns_an_svg_download(client, monkeypatch):
     generated = b'<svg xmlns="http://www.w3.org/2000/svg" />'
     calls = []
 
-    def fake_generate(lines, *, style=None, alignment="center"):
-        calls.append((lines, style, alignment))
+    def fake_generate(lines, *, style=None, alignment="center", font_size=36):
+        calls.append((lines, style, alignment, font_size))
         return generated
 
     monkeypatch.setattr(web_app, "_generate_svg", fake_generate)
 
     response = client.post(
         "/api/generate",
-        json={"text": "Hello\nworld", "style": 2, "alignment": "left"},
+        json={"text": "Hello\nworld", "style": 2, "alignment": "left", "fontSize": 48},
     )
 
     assert response.status_code == 200
     assert response.data == generated
     assert response.mimetype == "image/svg+xml"
     assert response.headers["Content-Disposition"] == "attachment; filename=handwriting.svg"
-    assert calls == [(["Hello", "world"], 2, "left")]
+    assert calls == [(["Hello", "world"], 2, "left", 48.0)]
 
 
 def test_render_returns_native_vector_document(client, monkeypatch):
@@ -85,8 +89,8 @@ def test_render_returns_native_vector_document(client, monkeypatch):
     }
     calls = []
 
-    def fake_render(lines, *, style=None, alignment="center"):
-        calls.append((lines, style, alignment))
+    def fake_render(lines, *, style=None, alignment="center", font_size=36):
+        calls.append((lines, style, alignment, font_size))
         return document
 
     monkeypatch.setattr(web_app, "_render_document", fake_render)
@@ -99,4 +103,4 @@ def test_render_returns_native_vector_document(client, monkeypatch):
     assert response.status_code == 200
     assert response.json == document
     assert response.headers["Cache-Control"] == "no-store"
-    assert calls == [(["Native"], 7, "center")]
+    assert calls == [(["Native"], 7, "center", 36.0)]

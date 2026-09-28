@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 from pathlib import Path
 
@@ -12,6 +13,9 @@ import lyrics
 from rnn import rnn
 
 BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_FONT_SIZE = 36.0
+MIN_FONT_SIZE = 18.0
+MAX_FONT_SIZE = 72.0
 
 
 class Hand:
@@ -51,6 +55,7 @@ class Hand:
         stroke_colors=None,
         stroke_widths=None,
         alignment="center",
+        font_size=DEFAULT_FONT_SIZE,
     ):
         document = self.render(
             lines=lines,
@@ -59,6 +64,7 @@ class Hand:
             stroke_colors=stroke_colors,
             stroke_widths=stroke_widths,
             alignment=alignment,
+            font_size=font_size,
         )
         self._draw(document, filename)
 
@@ -70,12 +76,21 @@ class Hand:
         stroke_colors=None,
         stroke_widths=None,
         alignment="center",
+        font_size=DEFAULT_FONT_SIZE,
     ):
         """Render handwriting into a platform-neutral vector document."""
 
         valid_char_set = set(drawing.alphabet)
         if alignment not in {"left", "center"}:
             raise ValueError("Alignment must be either 'left' or 'center'.")
+        if isinstance(font_size, bool):
+            raise ValueError("Font size must be a number between 18 and 72.")
+        try:
+            font_size = float(font_size)
+        except (TypeError, ValueError):
+            raise ValueError("Font size must be a number between 18 and 72.") from None
+        if not math.isfinite(font_size) or not MIN_FONT_SIZE <= font_size <= MAX_FONT_SIZE:
+            raise ValueError("Font size must be a number between 18 and 72.")
         for line_num, line in enumerate(lines):
             if len(line) > 75:
                 raise ValueError(
@@ -97,6 +112,7 @@ class Hand:
             stroke_colors=stroke_colors,
             stroke_widths=stroke_widths,
             alignment=alignment,
+            font_size=font_size,
         )
 
     def _sample(self, lines, biases=None, styles=None):
@@ -152,11 +168,13 @@ class Hand:
         stroke_colors=None,
         stroke_widths=None,
         alignment="center",
+        font_size=DEFAULT_FONT_SIZE,
     ):
         stroke_colors = stroke_colors or ['black']*len(lines)
         stroke_widths = stroke_widths or [2]*len(lines)
 
-        line_height = 60
+        font_scale = font_size / DEFAULT_FONT_SIZE
+        line_height = 60 * font_scale
         view_width = 1000
         view_height = line_height*(len(strokes) + 1)
         paths = []
@@ -170,7 +188,8 @@ class Hand:
                 initial_coord[1] -= line_height
                 continue
 
-            offsets[:, :2] *= 1.5
+            offsets = offsets.copy()
+            offsets[:, :2] *= 1.5 * font_scale
             strokes = drawing.offsets_to_coords(offsets)
             strokes = drawing.denoise(strokes)
             strokes[:, :2] = drawing.align(strokes[:, :2])
@@ -197,7 +216,7 @@ class Hand:
             paths.append(
                 {
                     "strokeColor": color,
-                    "lineWidth": float(width),
+                    "lineWidth": float(width) * font_scale,
                     "points": points,
                 }
             )

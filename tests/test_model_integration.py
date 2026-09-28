@@ -2,11 +2,41 @@ from __future__ import annotations
 
 from xml.etree import ElementTree
 
+import numpy as np
 import pytest
 
 pytest.importorskip("tensorflow", reason="TensorFlow is required for the model smoke test")
 
 from demo import Hand
+
+
+def test_layout_scales_coordinates_and_stroke_width_with_font_size():
+    offsets = np.array(
+        [
+            [1.0, 0.2, 0.0],
+            [1.0, 0.4, 0.0],
+            [1.0, -0.1, 0.0],
+            [1.0, 0.3, 0.0],
+            [1.0, -0.2, 0.0],
+            [1.0, 0.1, 0.0],
+            [1.0, 0.2, 0.0],
+            [1.0, 0.0, 1.0],
+        ],
+        dtype=float,
+    )
+    hand = Hand.__new__(Hand)
+
+    default = hand._layout([offsets], ["Scale"], font_size=36)
+    large = hand._layout([offsets], ["Scale"], font_size=72)
+
+    default_points = default["paths"][0]["points"]
+    large_points = large["paths"][0]["points"]
+    default_delta_x = default_points[-1]["x"] - default_points[0]["x"]
+    large_delta_x = large_points[-1]["x"] - large_points[0]["x"]
+
+    assert large["height"] == default["height"] * 2
+    assert large["paths"][0]["lineWidth"] == default["paths"][0]["lineWidth"] * 2
+    assert large_delta_x == pytest.approx(default_delta_x * 2)
 
 
 def test_pretrained_checkpoint_generates_valid_svg(tmp_path):

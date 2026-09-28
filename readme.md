@@ -86,9 +86,12 @@ Generation requests accept JSON in this shape:
 {
   "text": "Hello world",
   "style": 4,
-  "alignment": "center"
+  "alignment": "center",
+  "fontSize": 36
 }
 ```
+
+`fontSize` is optional, accepts values from 18 through 72, and defaults to 36.
 
 ## Native iPhone and iPad app
 

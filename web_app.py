@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import tempfile
 from collections.abc import Iterable
@@ -33,6 +34,9 @@ STYLES_DIR = BASE_DIR / "styles"
 MAX_LINE_LENGTH = 75
 MAX_LINES = 12
 MAX_TEXT_LENGTH = (MAX_LINE_LENGTH * MAX_LINES) + MAX_LINES - 1
+DEFAULT_FONT_SIZE = 36.0
+MIN_FONT_SIZE = 18.0
+MAX_FONT_SIZE = 72.0
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 16 * 1024
@@ -236,7 +240,8 @@ def _prepare_generation_inputs(
     text_raw: str,
     style_raw,
     alignment_raw: str,
-) -> tuple[list[str], int | None, str]:
+    font_size_raw=DEFAULT_FONT_SIZE,
+) -> tuple[list[str], int | None, str, float]:
     """Validate and normalize inputs for preview/download requests."""
 
     lines = _normalize_text(text_raw)
@@ -257,11 +262,24 @@ def _prepare_generation_inputs(
     if alignment is None:
         raise ValueError("Invalid alignment selected.")
 
-    return lines, style, alignment
+    if isinstance(font_size_raw, bool):
+        raise ValueError("Font size must be a number between 18 and 72.")
+    try:
+        font_size = float(font_size_raw)
+    except (TypeError, ValueError):
+        raise ValueError("Font size must be a number between 18 and 72.") from None
+    if not math.isfinite(font_size) or not MIN_FONT_SIZE <= font_size <= MAX_FONT_SIZE:
+        raise ValueError("Font size must be a number between 18 and 72.")
+
+    return lines, style, alignment, font_size
 
 
 def _generate_svg(
-    lines: Iterable[str], *, style: int | None = None, alignment: str = "center"
+    lines: Iterable[str],
+    *,
+    style: int | None = None,
+    alignment: str = "center",
+    font_size: float = DEFAULT_FONT_SIZE,
 ) -> bytes:
     """Generate SVG bytes for the provided lines."""
 
@@ -275,7 +293,7 @@ def _generate_svg(
         temp_path = Path(tmp_file.name)
 
     try:
-        kwargs = {"alignment": alignment}
+        kwargs = {"alignment": alignment, "font_size": font_size}
         if style is not None:
             kwargs["styles"] = [style] * len(normalized_lines)
 
@@ -289,14 +307,18 @@ def _generate_svg(
 
 
 def _render_document(
-    lines: Iterable[str], *, style: int | None = None, alignment: str = "center"
+    lines: Iterable[str],
+    *,
+    style: int | None = None,
+    alignment: str = "center",
+    font_size: float = DEFAULT_FONT_SIZE,
 ) -> dict:
     """Generate a platform-neutral vector document for native clients."""
 
     normalized_lines = list(lines)
     _validate_lines(normalized_lines)
 
-    kwargs = {"alignment": alignment}
+    kwargs = {"alignment": alignment, "font_size": font_size}
     if style is not None:
         kwargs["styles"] = [style] * len(normalized_lines)
 
@@ -330,10 +352,15 @@ def index():
         style_raw = request.form.get("style")
         alignment_raw = request.form.get("alignment", default_alignment)
         try:
-            lines, style, alignment = _prepare_generation_inputs(
+            lines, style, alignment, font_size = _prepare_generation_inputs(
                 text, style_raw, alignment_raw
             )
-            svg_bytes = _generate_svg(lines, style=style, alignment=alignment)
+            svg_bytes = _generate_svg(
+                lines,
+                style=style,
+                alignment=alignment,
+                font_size=font_size,
+            )
         except ValueError as exc:
             return render_template_string(
                 TEMPLATE,
@@ -363,13 +390,14 @@ def api_styles() -> Response:
     return jsonify(payload)
 
 
-def _parse_generation_payload() -> tuple[list[str], int | None, str]:
+def _parse_generation_payload() -> tuple[list[str], int | None, str, float]:
     payload = request.get_json(silent=True) or {}
     text = payload.get("text", "")
     style_raw = payload.get("style")
     alignment_raw = payload.get("alignment", "center")
+    font_size_raw = payload.get("fontSize", DEFAULT_FONT_SIZE)
 
-    return _prepare_generation_inputs(text, style_raw, alignment_raw)
+    return _prepare_generation_inputs(text, style_raw, alignment_raw, font_size_raw)
 
 
 @app.route("/api/health", methods=["GET"])
@@ -391,12 +419,17 @@ def api_preview() -> Response:
     """Generate an inline SVG preview for the React UI."""
 
     try:
-        lines, style, alignment = _parse_generation_payload()
+        lines, style, alignment, font_size = _parse_generation_payload()
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
     try:
-        svg_bytes = _generate_svg(lines, style=style, alignment=alignment)
+        svg_bytes = _generate_svg(
+            lines,
+            style=style,
+            alignment=alignment,
+            font_size=font_size,
+        )
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
@@ -408,12 +441,17 @@ def api_generate() -> Response:
     """Generate and return an SVG file for download."""
 
     try:
-        lines, style, alignment = _parse_generation_payload()
+        lines, style, alignment, font_size = _parse_generation_payload()
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
     try:
-        svg_bytes = _generate_svg(lines, style=style, alignment=alignment)
+        svg_bytes = _generate_svg(
+            lines,
+            style=style,
+            alignment=alignment,
+            font_size=font_size,
+        )
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
@@ -426,8 +464,13 @@ def api_render() -> Response:
     """Return vector paths for native Canvas/Core Graphics clients."""
 
     try:
-        lines, style, alignment = _parse_generation_payload()
-        document = _render_document(lines, style=style, alignment=alignment)
+        lines, style, alignment, font_size = _parse_generation_payload()
+        document = _render_document(
+            lines,
+            style=style,
+            alignment=alignment,
+            font_size=font_size,
+        )
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
