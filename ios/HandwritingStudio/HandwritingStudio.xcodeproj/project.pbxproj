@@ -14,7 +14,6 @@
 		2B07AF312F8C5DD911C2E39E /* style-8-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 402B268DB13021585459A124 /* style-8-strokes.npy */; };
 		2FD98EECC3D3F98A5E57828A /* style-12-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 86E02533B4FFD5323809C591 /* style-12-strokes.npy */; };
 		3890C68EE6A92D0E6B7B6A22 /* HandwritingModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9051331C8D500EB3D36634E1 /* HandwritingModels.swift */; };
-		3F86851F63F06D41EFE6FC42 /* HandwritingStep.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 64D38438CB6FD5AB82A94FB7 /* HandwritingStep.mlpackage */; };
 		438141CD64F9D512B7910270 /* style-9-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 7CEC1D04183A5CF3254DC8E3 /* style-9-strokes.npy */; };
 		4426B94A7643AE0EB3EF0C51 /* style-7-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 4FDA5E80297BDB28EE42CC90 /* style-7-chars.npy */; };
 		4D31B92F39C2D5A3F456B5E2 /* style-5-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = ABE95A75F73986FA0BAD0455 /* style-5-strokes.npy */; };
@@ -34,10 +33,12 @@
 		A4EAAA357F723A1C332D7052 /* style-1-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 8406883F73026A502250C2CC /* style-1-chars.npy */; };
 		A7416FF1BDB4C4109C7F3D45 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9CA51F58731B4EEFDFB62E3A /* Assets.xcassets */; };
 		AF58DD94BC3059118BD91384 /* HandwritingCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65FBA6236A705CB7FAC52561 /* HandwritingCanvas.swift */; };
+		BD08BD66FEF02C8EAE16B15D /* HandwritingStep.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 94412B2711A7663A79C86E57 /* HandwritingStep.mlmodel */; };
 		C098843B90EB33E8A1F70087 /* HandwritingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6412DAB3292FB83547B5F450 /* HandwritingViewModel.swift */; };
 		C3C7F5D4D4437891A15BBAFC /* HandwritingStudioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B4A9157C2FF80379E5AF9F /* HandwritingStudioApp.swift */; };
 		CF16090C0D71BC67EB802F54 /* style-6-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 071B98B0C76F1514E53EDD4F /* style-6-chars.npy */; };
 		D1C296CA3C06744B2FE5CB94 /* style-5-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 52558A956975A6E32F01F22D /* style-5-chars.npy */; };
+		D4555CBF134C96EAEA6ED9BB /* DocumentExportRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22533121A31FE5C75E9C7162 /* DocumentExportRenderer.swift */; };
 		D4E6B18AB95EA90B14EE01F7 /* style-6-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = B0283DA4B6DBA3510B1FDB47 /* style-6-strokes.npy */; };
 		D937D8EE93A3D673A3A0FF1E /* style-11-strokes.npy in Resources */ = {isa = PBXBuildFile; fileRef = 6B5C8878F463F749537EDA4C /* style-11-strokes.npy */; };
 		E42864E4ED5DB8879EF91023 /* style-9-chars.npy in Resources */ = {isa = PBXBuildFile; fileRef = 7BA0C2205D00C037BEBB9423 /* style-9-chars.npy */; };
@@ -65,6 +66,7 @@
 		071B98B0C76F1514E53EDD4F /* style-6-chars.npy */ = {isa = PBXFileReference; path = "style-6-chars.npy"; sourceTree = "<group>"; };
 		0AE77838DF7D1FB5E9D7C3BF /* style-0-chars.npy */ = {isa = PBXFileReference; path = "style-0-chars.npy"; sourceTree = "<group>"; };
 		1797F275797BBA10DEC656E8 /* HandwritingStudioTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = HandwritingStudioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		22533121A31FE5C75E9C7162 /* DocumentExportRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentExportRenderer.swift; sourceTree = "<group>"; };
 		266E4FEEB44897CAD85021C0 /* style-10-chars.npy */ = {isa = PBXFileReference; path = "style-10-chars.npy"; sourceTree = "<group>"; };
 		343613FB7D88C2225C030E79 /* CustomHandwritingStyleRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomHandwritingStyleRepository.swift; sourceTree = "<group>"; };
 		402B268DB13021585459A124 /* style-8-strokes.npy */ = {isa = PBXFileReference; path = "style-8-strokes.npy"; sourceTree = "<group>"; };
@@ -74,7 +76,6 @@
 		4FDA5E80297BDB28EE42CC90 /* style-7-chars.npy */ = {isa = PBXFileReference; path = "style-7-chars.npy"; sourceTree = "<group>"; };
 		52558A956975A6E32F01F22D /* style-5-chars.npy */ = {isa = PBXFileReference; path = "style-5-chars.npy"; sourceTree = "<group>"; };
 		6412DAB3292FB83547B5F450 /* HandwritingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingViewModel.swift; sourceTree = "<group>"; };
-		64D38438CB6FD5AB82A94FB7 /* HandwritingStep.mlpackage */ = {isa = PBXFileReference; path = HandwritingStep.mlpackage; sourceTree = "<group>"; };
 		65FBA6236A705CB7FAC52561 /* HandwritingCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingCanvas.swift; sourceTree = "<group>"; };
 		6B5C8878F463F749537EDA4C /* style-11-strokes.npy */ = {isa = PBXFileReference; path = "style-11-strokes.npy"; sourceTree = "<group>"; };
 		6D0B12396B204E01626F6472 /* style-7-strokes.npy */ = {isa = PBXFileReference; path = "style-7-strokes.npy"; sourceTree = "<group>"; };
@@ -86,6 +87,7 @@
 		8406883F73026A502250C2CC /* style-1-chars.npy */ = {isa = PBXFileReference; path = "style-1-chars.npy"; sourceTree = "<group>"; };
 		86E02533B4FFD5323809C591 /* style-12-strokes.npy */ = {isa = PBXFileReference; path = "style-12-strokes.npy"; sourceTree = "<group>"; };
 		9051331C8D500EB3D36634E1 /* HandwritingModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingModels.swift; sourceTree = "<group>"; };
+		94412B2711A7663A79C86E57 /* HandwritingStep.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = HandwritingStep.mlmodel; sourceTree = "<group>"; };
 		9BB34116E120EF19DA94C8D1 /* style-2-strokes.npy */ = {isa = PBXFileReference; path = "style-2-strokes.npy"; sourceTree = "<group>"; };
 		9CA51F58731B4EEFDFB62E3A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1B4A9157C2FF80379E5AF9F /* HandwritingStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HandwritingStudioApp.swift; sourceTree = "<group>"; };
@@ -184,6 +186,7 @@
 			isa = PBXGroup;
 			children = (
 				343613FB7D88C2225C030E79 /* CustomHandwritingStyleRepository.swift */,
+				22533121A31FE5C75E9C7162 /* DocumentExportRenderer.swift */,
 				DFD2A303AD342996ABB4E696 /* NativeHandwritingGenerator.swift */,
 				E0B3958C1546AD53A1F3D890 /* PencilStrokeNormalizer.swift */,
 			);
@@ -210,7 +213,7 @@
 		E2D68D506282685A53264CB3 /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				64D38438CB6FD5AB82A94FB7 /* HandwritingStep.mlpackage */,
+				94412B2711A7663A79C86E57 /* HandwritingStep.mlmodel */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -285,9 +288,11 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					A24F7515FCA1A8B9325DE418 = {
+						DevelopmentTeam = 6G67FZ57DT;
 						ProvisioningStyle = Automatic;
 					};
 					E0347E180E7947391A122ECA = {
+						DevelopmentTeam = 6G67FZ57DT;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -364,9 +369,10 @@
 			files = (
 				2383629788C130DE158F0210 /* ContentView.swift in Sources */,
 				150A96ABFB458671EA2BE394 /* CustomHandwritingStyleRepository.swift in Sources */,
+				D4555CBF134C96EAEA6ED9BB /* DocumentExportRenderer.swift in Sources */,
 				AF58DD94BC3059118BD91384 /* HandwritingCanvas.swift in Sources */,
 				3890C68EE6A92D0E6B7B6A22 /* HandwritingModels.swift in Sources */,
-				3F86851F63F06D41EFE6FC42 /* HandwritingStep.mlpackage in Sources */,
+				BD08BD66FEF02C8EAE16B15D /* HandwritingStep.mlmodel in Sources */,
 				C3C7F5D4D4437891A15BBAFC /* HandwritingStudioApp.swift in Sources */,
 				58F94CE90386C943B867B4D4 /* HandwritingStylePicker.swift in Sources */,
 				C098843B90EB33E8A1F70087 /* HandwritingViewModel.swift in Sources */,
@@ -459,8 +465,9 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 9;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 6G67FZ57DT;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -518,8 +525,9 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 9;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 6G67FZ57DT;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;

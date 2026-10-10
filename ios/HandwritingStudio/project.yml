@@ -10,9 +10,10 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    CURRENT_PROJECT_VERSION: 1
+    CURRENT_PROJECT_VERSION: 9
     MARKETING_VERSION: 1.0
     CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: 6G67FZ57DT
 
 targets:
   HandwritingStudio:
@@ -20,7 +21,7 @@ targets:
     platform: iOS
     sources:
       - path: Sources
-      - path: Resources/Models/HandwritingStep.mlpackage
+      - path: Resources/Models/HandwritingStep.mlmodel
       - path: Resources
         excludes:
           - Info.plist
@@ -30,12 +31,16 @@ targets:
       path: Resources/Info.plist
       properties:
         CFBundleDisplayName: Handwriting
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UIRequiredDeviceCapabilities:
           - arm64
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
     settings:

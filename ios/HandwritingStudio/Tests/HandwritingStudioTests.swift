@@ -18,6 +18,35 @@ final class HandwritingStudioTests: XCTestCase {
         XCTAssertEqual(document.paths.first?.points.first, RenderPoint(x: 12.5, y: 34, move: true))
     }
 
+    func testAllExportFormatsProduceValidFiles() throws {
+        let document = RenderDocument(
+            width: 120,
+            height: 80,
+            backgroundColor: "#FFFFFF",
+            paths: [
+                RenderedPath(
+                    strokeColor: "#111111",
+                    lineWidth: 2,
+                    points: [
+                        RenderPoint(x: 10, y: 10, move: true),
+                        RenderPoint(x: 90, y: 60, move: false),
+                    ]
+                ),
+            ],
+            unit: .points
+        )
+
+        let svg = try DocumentExportRenderer.data(for: document, format: .svg)
+        let pdf = try DocumentExportRenderer.data(for: document, format: .pdf)
+        let png = try DocumentExportRenderer.data(for: document, format: .png)
+        let jpeg = try DocumentExportRenderer.data(for: document, format: .jpeg)
+
+        XCTAssertTrue(String(decoding: svg.prefix(5), as: UTF8.self).contains("<?xml"))
+        XCTAssertEqual(String(decoding: pdf.prefix(4), as: UTF8.self), "%PDF")
+        XCTAssertEqual(Array(png.prefix(4)), [0x89, 0x50, 0x4E, 0x47])
+        XCTAssertEqual(Array(jpeg.prefix(2)), [0xFF, 0xD8])
+    }
+
     func testPageFormatsAndOrientation() {
         let portrait = PageFormat.a4.dimensions(orientation: .portrait)
         let landscape = PageFormat.a4.dimensions(orientation: .landscape)
@@ -71,8 +100,8 @@ final class HandwritingStudioTests: XCTestCase {
         let model = try HandwritingStep(configuration: MLModelConfiguration())
         let output = try model.prediction(
             stroke: MLShapedArray<Float>(repeating: 0, shape: [1, 3]),
-            chars: MLShapedArray<Int32>(repeating: 0, shape: [1, 120]),
-            chars_len: MLShapedArray<Int32>(scalars: [1], shape: [1]),
+            chars: MLShapedArray<Float>(repeating: 0, shape: [1, 120]),
+            chars_len: MLShapedArray<Float>(scalars: [1], shape: [1]),
             h1: MLShapedArray<Float>(repeating: 0, shape: [1, 400]),
             c1: MLShapedArray<Float>(repeating: 0, shape: [1, 400]),
             h2: MLShapedArray<Float>(repeating: 0, shape: [1, 400]),

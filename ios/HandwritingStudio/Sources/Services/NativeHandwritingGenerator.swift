@@ -248,13 +248,13 @@ final class NativeHandwritingGenerator {
     }
 
     private func encode(_ text: String) throws -> EncodedText {
-        var values = [Int32]()
+        var values = [Float]()
         values.reserveCapacity(text.count + 1)
         for character in text {
             guard let value = Self.characterNumbers[character] else {
                 throw NativeHandwritingError.unsupportedCharacter(character)
             }
-            values.append(value)
+            values.append(Float(value))
         }
         values.append(0)
 
@@ -274,7 +274,7 @@ final class NativeHandwritingGenerator {
         let output = try model.prediction(
             stroke: MLShapedArray(scalars: [stroke.x, stroke.y, stroke.penUp], shape: [1, 3]),
             chars: MLShapedArray(scalars: encoded.values, shape: [1, 120]),
-            chars_len: MLShapedArray(scalars: [Int32(encoded.length)], shape: [1]),
+            chars_len: MLShapedArray(scalars: [Float(encoded.length)], shape: [1]),
             h1: state.shaped(state.h1),
             c1: state.shaped(state.c1),
             h2: state.shaped(state.h2),
@@ -348,7 +348,7 @@ final class NativeHandwritingGenerator {
 }
 
 private struct EncodedText {
-    let values: [Int32]
+    let values: [Float]
     let length: Int
 }
 

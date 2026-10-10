@@ -3,88 +3,61 @@ import SwiftUI
 struct HandwritingStylePicker: View {
     let styles: [HandwritingStyle]
     @Binding var selection: Int?
-    @State private var isExpanded = false
-
-    private var selectedStyle: HandwritingStyle {
-        styles.first(where: { $0.id == selection }) ?? styles[0]
-    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Button {
-                withAnimation(.snappy) {
-                    isExpanded.toggle()
-                }
-            } label: {
-                HStack(spacing: 12) {
-                    styleDescription(selectedStyle)
-                    Spacer(minLength: 8)
-                    HandwritingStyleSampleView(styleID: selectedStyle.id)
-                        .frame(width: 128, height: 36)
-                    Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                        .foregroundStyle(.secondary)
-                }
-                .contentShape(Rectangle())
-                .padding(12)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Writing style, \(selectedStyle.label)")
-            .accessibilityHint("Shows all writing styles")
+        ScrollView(.horizontal) {
+            LazyHStack(spacing: 10) {
+                ForEach(styles) { style in
+                    Button {
+                        selection = style.id
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HandwritingStyleSampleView(styleID: style.id)
+                                .frame(width: 106, height: 42)
+                                .padding(.horizontal, 6)
+                                .background(Color(uiColor: .systemBackground))
+                                .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
 
-            if isExpanded {
-                Divider()
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(styles) { style in
-                            Button {
-                                selection = style.id
-                                withAnimation(.snappy) {
-                                    isExpanded = false
+                            HStack(spacing: 4) {
+                                Text(style.label)
+                                    .font(.caption.weight(.semibold))
+                                    .lineLimit(1)
+                                if style.isCustom {
+                                    Image(systemName: "person.crop.circle.fill")
+                                        .font(.caption2)
                                 }
-                            } label: {
-                                HStack(spacing: 12) {
-                                    styleDescription(style)
-                                    Spacer(minLength: 8)
-                                    HandwritingStyleSampleView(styleID: style.id)
-                                        .frame(width: 150, height: 38)
-                                    Image(systemName: selection == style.id ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(selection == style.id ? Color.accentColor : .secondary)
-                                }
-                                .contentShape(Rectangle())
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
                             }
-                            .buttonStyle(.plain)
 
-                            if style.id != styles.last?.id {
-                                Divider().padding(.leading, 12)
-                            }
+                            Text(style.detail)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        .frame(width: 118, alignment: .leading)
+                        .padding(9)
+                        .background(
+                            selection == style.id
+                                ? Color.accentColor.opacity(0.12)
+                                : Color(uiColor: .secondarySystemGroupedBackground)
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(
+                                    selection == style.id ? Color.accentColor : Color.clear,
+                                    lineWidth: 1.5
+                                )
                         }
                     }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(style.label), \(style.detail)")
+                    .accessibilityAddTraits(selection == style.id ? .isSelected : [])
                 }
-                .frame(maxHeight: 330)
             }
+            .padding(.horizontal, 1)
         }
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(.quaternary)
-        }
-    }
-
-    private func styleDescription(_ style: HandwritingStyle) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(style.label)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-            Text(style.detail)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-        }
+        .scrollIndicators(.hidden)
+        .accessibilityLabel("Writing style")
     }
 }
 

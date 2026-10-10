@@ -5,6 +5,8 @@ This is the native iOS client for the handwriting synthesis model.
 ## Native stack
 
 - SwiftUI for the complete interface
+- A canvas-first editor that keeps the generated page visible while text, style, and page controls change
+- A compact bottom inspector on iPhone and a side-by-side workspace on iPad
 - Core ML for local recurrent neural-network inference
 - SwiftUI `Canvas` and Core Graphics paths for handwriting rendering
 - A live progress bar driven by completed Core ML inference steps
@@ -13,10 +15,11 @@ This is the native iOS client for the handwriting synthesis model.
 - Portrait/landscape orientation, adjustable writing size, and automatic word wrapping
 - German umlauts, sharp s, and French accented-letter vector marks
 - Personal handwriting primers captured locally with Apple Pencil on iPad
-- UIKit's native share sheet for SVG export
+- UIKit's native share sheet with SVG, PDF, PNG, and JPG export
+- A distraction-free full-screen page preview
 - XCTest for client model and configuration tests
 
-The app does not embed the React site, use a web view, or contact the Python service. The converted `HandwritingStep.mlpackage`, all 13 style primers, the recurrent sampling loop, GMM sampling, stroke cleanup, layout, and SVG export run locally on the device. The style selector shows a real sample for every bundled style, and generation reports actual model progress rather than displaying a timer-based animation. Text wraps at word boundaries according to the selected canvas, orientation, margins, and writing size; explicit line breaks are preserved.
+The app does not embed the React site, use a web view, or contact the Python service. The converted `HandwritingStep.mlmodel`, all 13 style primers, the recurrent sampling loop, GMM sampling, stroke cleanup, layout, and SVG export run locally on the device. The model uses Core ML's neural-network representation so compatible layers can run on the GPU or Neural Engine without relying on the unstable MLE5 ML Program output path. The style selector shows a real sample for every bundled style, and generation reports actual model progress rather than displaying a timer-based animation. Text wraps at word boundaries according to the selected canvas, orientation, margins, and writing size; explicit line breaks are preserved.
 
 ## Run in the simulator
 

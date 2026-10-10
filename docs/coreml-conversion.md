@@ -2,7 +2,9 @@
 
 ## Result
 
-The trained recurrent cell, Graves attention calculation, and GMM projection convert successfully to a Core ML `mlprogram` targeting iOS 17. The exported package is bundled in the native app as `HandwritingStep.mlpackage`.
+The trained recurrent cell, Graves attention calculation, and GMM projection convert successfully to Core ML's `neuralnetwork` representation. The exported model is bundled in the native app as `HandwritingStep.mlmodel`.
+
+The app deliberately uses the neural-network representation instead of an ML Program. The MLE5 ML Program runtime aborts while binding this model's output buffers on some physical iOS devices. The neural-network representation uses Core ML's established execution path while retaining automatic placement of compatible operations on the GPU or Neural Engine.
 
 The conversion is split at one recurrent step. Its explicit inputs and outputs are:
 
@@ -30,4 +32,4 @@ pip install -r requirements-coreml.txt
 python tools/export_coreml.py
 ```
 
-The exporter restores the original checkpoint, freezes only inference weights, converts the step to float32 Core ML, reloads the saved package, and compares every output with TensorFlow.
+The exporter restores the original checkpoint, freezes only inference weights, converts the step to a Core ML neural network, reloads the saved model, and compares every output with TensorFlow.

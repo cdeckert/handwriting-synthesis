@@ -1,45 +1,44 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @ObservedObject var viewModel: HandwritingViewModel
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Writing character") {
-                    Slider(value: $viewModel.bias, in: 0 ... 1, step: 0.05) {
-                        Text("Regularity")
-                    } minimumValueLabel: {
-                        Image(systemName: "scribble")
-                    } maximumValueLabel: {
-                        Image(systemName: "textformat")
-                    }
+                Section("Privacy & performance") {
+                    Label("Generated privately on this device", systemImage: "checkmark.shield.fill")
+                        .foregroundStyle(.green)
 
-                    LabeledContent("Regularity") {
-                        Text(viewModel.bias, format: .number.precision(.fractionLength(2)))
-                            .monospacedDigit()
-                    }
+                    LabeledContent("Model", value: "Core ML")
+                    LabeledContent("Connection", value: "Not required")
+
+                    Text("Your text, handwriting styles, and generated pages are not uploaded to a server.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 }
 
-                Section("On-device generation") {
-                    Label("Core ML model included", systemImage: "checkmark.seal.fill")
-                        .foregroundStyle(.green)
-                    Text("Handwriting is generated entirely on this iPhone. No network connection or server is required.")
+                Section("Language support") {
+                    Label("Latin alphabet", systemImage: "character.cursor.ibeam")
+                    Text("Includes German umlauts, ß, and French accented letters.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Export") {
+                    Label("Scalable SVG", systemImage: "square.and.arrow.up")
+                    Text("SVG files stay sharp at any size and can be opened in most design and illustration apps.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle("About Handwriting")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
             }
-        }
-        .onChange(of: viewModel.bias) { _, _ in
-            viewModel.schedulePreview()
         }
     }
 }

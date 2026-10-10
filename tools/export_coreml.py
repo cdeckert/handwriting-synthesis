@@ -28,7 +28,7 @@ from tf_utils import dense_layer
 
 DEFAULT_CHECKPOINT = BASE_DIR / "checkpoints" / "model-17900"
 DEFAULT_OUTPUT = (
-    BASE_DIR / "ios" / "HandwritingStudio" / "Resources" / "Models" / "HandwritingStep.mlpackage"
+    BASE_DIR / "ios" / "HandwritingStudio" / "Resources" / "Models" / "HandwritingStep.mlmodel"
 )
 
 STATE_NAMES = ("h1", "c1", "h2", "c2", "h3", "c3")
@@ -122,9 +122,19 @@ def convert_to_coreml(
     output: Path,
     checkpoint: Path,
 ):
-    """Convert a frozen TensorFlow GraphDef into an iOS 17 ML Program."""
+    """Convert a frozen TensorFlow GraphDef into a Core ML neural network.
+
+    The neural-network representation intentionally avoids the MLE5 ML Program
+    runtime. That runtime aborts while binding this model's output buffers on
+    some physical iOS devices. Core ML can still place compatible layers on the
+    GPU or Neural Engine when the app loads this model with ``.all`` compute
+    units.
+    """
 
     import coremltools as ct
+
+    if output.suffix != ".mlmodel":
+        raise ValueError("The neural-network export must use a .mlmodel output path.")
 
     inputs = [
         ct.TensorType(name="stroke", shape=(1, 3)),
@@ -140,10 +150,11 @@ def convert_to_coreml(
         source="tensorflow",
         inputs=inputs,
         outputs=outputs,
-        convert_to="mlprogram",
-        minimum_deployment_target=ct.target.iOS17,
-        compute_precision=ct.precision.FLOAT32,
+        convert_to="neuralnetwork",
+        minimum_deployment_target=ct.target.iOS14,
     )
+    if model.get_spec().WhichOneof("Type") != "neuralNetwork":
+        raise RuntimeError("Core ML conversion did not produce a neural-network model.")
     model.author = "Handwriting Synthesis"
     model.short_description = "One recurrent attention/GMM step for offline handwriting synthesis."
     model.version = "1.0"
@@ -248,7 +259,7 @@ def main() -> None:
     graph_def = build_and_freeze_step(checkpoint)
     print(f"Frozen step graph: {len(graph_def.node)} nodes")
     convert_to_coreml(graph_def, output, checkpoint)
-    print(f"Saved Core ML package: {output}")
+    print(f"Saved Core ML model: {output}")
 
     if not args.skip_verify:
         worst_error = verify_numerical_parity(graph_def, output)

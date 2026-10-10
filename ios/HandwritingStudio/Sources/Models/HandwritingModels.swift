@@ -185,3 +185,48 @@ struct SharedFile: Identifiable {
     let id = UUID()
     let url: URL
 }
+
+enum ExportFormat: String, CaseIterable, Identifiable {
+    case svg
+    case pdf
+    case png
+    case jpeg
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .svg: "SVG"
+        case .pdf: "PDF"
+        case .png: "PNG"
+        case .jpeg: "JPG"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .svg: "Scalable vector for editing"
+        case .pdf: "Print-ready document"
+        case .png: "Lossless image"
+        case .jpeg: "Compact image"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .svg: "point.3.connected.trianglepath.dotted"
+        case .pdf: "doc.richtext"
+        case .png: "photo"
+        case .jpeg: "photo.fill"
+        }
+    }
+
+    var fileExtension: String {
+        switch self {
+        case .svg: "svg"
+        case .pdf: "pdf"
+        case .png: "png"
+        case .jpeg: "jpg"
+        }
+    }
+}

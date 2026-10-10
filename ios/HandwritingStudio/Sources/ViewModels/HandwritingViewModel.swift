@@ -91,7 +91,7 @@ final class HandwritingViewModel: ObservableObject {
         }
     }
 
-    func exportSVG() async -> SharedFile? {
+    func export(format: ExportFormat) async -> SharedFile? {
         isExporting = true
         defer { isExporting = false }
 
@@ -122,9 +122,9 @@ final class HandwritingViewModel: ObservableObject {
                 withIntermediateDirectories: true
             )
             let fileURL = directory.appending(
-                path: "handwriting-\(Int(Date().timeIntervalSince1970)).svg"
+                path: "handwriting-\(Int(Date().timeIntervalSince1970)).\(format.fileExtension)"
             )
-            try NativeSVGRenderer.data(for: rendered).write(
+            try DocumentExportRenderer.data(for: rendered, format: format).write(
                 to: fileURL,
                 options: .atomic
             )
